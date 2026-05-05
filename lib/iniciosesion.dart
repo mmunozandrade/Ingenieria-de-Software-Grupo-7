@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-import 'inicial.dart';
-import 'iniciosesion.dart';
+import 'inicial.dart'; // Para ir al Dashboard al ingresar
+import 'login.dart'; // Para ir al Registro si no tiene cuenta
 
-class RegistroPage extends StatefulWidget {
-  const RegistroPage({super.key});
+class IniciarSesionPage extends StatefulWidget {
+  const IniciarSesionPage({super.key});
+
   @override
-  State<RegistroPage> createState() => _RegistroPageState();
+  State<IniciarSesionPage> createState() => _IniciarSesionPageState();
 }
 
-class _RegistroPageState extends State<RegistroPage> {
+class _IniciarSesionPageState extends State<IniciarSesionPage> {
   bool _obscureText = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,7 +26,7 @@ class _RegistroPageState extends State<RegistroPage> {
               Image.asset('assets/Logo.png', height: 100),
               const SizedBox(height: 20),
               const Text(
-                'Registro de Usuario',
+                'Iniciar Sesión',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -35,33 +37,32 @@ class _RegistroPageState extends State<RegistroPage> {
                 'Sistema de Personal Institucional',
                 style: TextStyle(color: Colors.grey),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
 
               // Campo Correo
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'CorreoInstitucional',
+                  'Correo Institucional',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   hintText: 'usuario@accaconcagua.cl',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
-                ),
-              ),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Debe usar su correo institucional @accaconcagua.cl',
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                  prefixIcon: const Icon(
+                    Icons.email_outlined,
+                    color: Colors.grey,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
+
               // Campo Contraseña
               const Align(
                 alignment: Alignment.centerLeft,
@@ -78,6 +79,10 @@ class _RegistroPageState extends State<RegistroPage> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey,
+                  ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureText ? Icons.visibility_off : Icons.visibility,
@@ -87,45 +92,33 @@ class _RegistroPageState extends State<RegistroPage> {
                   ),
                 ),
               ),
-              // Lista de validaciones (Visual)
-              const SizedBox(height: 10),
-              _buildValidationItem("Mínimo 8 caracteres"),
-              _buildValidationItem("Al menos una mayúscula"),
-              _buildValidationItem("Al menos una minúscula"),
-              _buildValidationItem("Al menos un número"),
-              const SizedBox(height: 20),
-              // Confirmar Contraseña
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'ConfirmarContraseña',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                obscureText: true,
-                decoration: InputDecoration(
-                  hintText: 'Confirme su contraseña',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+
+              // Olvidé mi contraseña
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    // Aquí puedes poner la lógica para recuperar contraseña
+                  },
+                  child: const Text(
+                    '¿Olvidaste tu contraseña?',
+                    style: TextStyle(color: Color(0xFF00897B), fontSize: 13),
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
 
-              // Botón Registrar
+              // Botón Ingresar
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navegación hacia el archivo inicial.dart
+                    // Navegación hacia el Dashboard (inicial.dart)
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const DashboardScreen(), // <-- Asegúrate que este sea el nombre de la clase en inicial.dart
+                        builder: (context) => const DashboardScreen(),
                       ),
                     );
                   },
@@ -136,27 +129,34 @@ class _RegistroPageState extends State<RegistroPage> {
                     ),
                   ),
                   child: const Text(
-                    'Registrar Cuenta',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                    'Ingresar',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
+
+              // Enlace para ir al Registro
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('¿Ya tienes una cuenta? '),
+                  const Text('¿No tienes una cuenta? '),
                   TextButton(
                     onPressed: () {
-                      Navigator.push(
+                      // Navega hacia la pantalla de Registro (login.dart)
+                      Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const IniciarSesionPage(),
+                          builder: (context) => const RegistroPage(),
                         ),
                       );
                     },
                     child: const Text(
-                      'Iniciar Sesión',
+                      'Regístrate aquí',
                       style: TextStyle(
                         color: Color(0xFF00897B),
                         fontWeight: FontWeight.bold,
@@ -169,16 +169,6 @@ class _RegistroPageState extends State<RegistroPage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildValidationItem(String text) {
-    return Row(
-      children: [
-        const Icon(Icons.check, size: 14, color: Colors.grey),
-        const SizedBox(width: 5),
-        Text(text, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
     );
   }
 }
