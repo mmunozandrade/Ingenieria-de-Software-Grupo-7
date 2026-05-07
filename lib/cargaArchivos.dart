@@ -1,18 +1,18 @@
 import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'inicial.dart';
+import 'registroBonos.dart';
 
-class CargaMasivaLiquidacionesPage extends StatefulWidget {
-  const CargaMasivaLiquidacionesPage({super.key});
+class CargaMasivaArchivosPage extends StatefulWidget {
+  const CargaMasivaArchivosPage({super.key});
 
   @override
-  State<CargaMasivaLiquidacionesPage> createState() =>
-      _CargaMasivaLiquidacionesPageState();
+  State<CargaMasivaArchivosPage> createState() =>
+      _CargaMasivaArchivosPageState();
 }
 
-class _CargaMasivaLiquidacionesPageState
-    extends State<CargaMasivaLiquidacionesPage> {
+class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
   String? nombreArchivo;
   Uint8List? archivoBytes;
 
@@ -52,7 +52,6 @@ class _CargaMasivaLiquidacionesPageState
       );
       return;
     }
-
     // Aquí después puedes conectar con backend o procesar el archivo.
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -66,74 +65,144 @@ class _CargaMasivaLiquidacionesPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1000),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF001E42),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          "Clínica Aconcagua",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFF001E42)),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Image.asset('assets/images/logo_aconcagua.png', height: 60),
-
-                  const SizedBox(height: 22),
-
-                  const Text(
-                    'Carga Masiva de Liquidaciones',
+                  Text(
+                    'Menú Principal',
                     style: TextStyle(
-                      fontSize: 26,
+                      color: Colors.white,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
                     ),
-                    textAlign: TextAlign.center,
                   ),
-
-                  const SizedBox(height: 8),
-
-                  const Text(
-                    'Administrador - Importación de liquidaciones en formato PDF (.zip)',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF334155)),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  const _RequisitosArchivoCard(),
-
-                  const SizedBox(height: 28),
-
-                  _ZonaCargaArchivo(
-                    nombreArchivo: nombreArchivo,
-                    onSeleccionar: seleccionarArchivoZip,
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: ElevatedButton(
-                      onPressed: cargarArchivo,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F9F8F),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Cargar Liquidaciones',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Gestión Administrativa',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
+            ),
+            // OPCIÓN: INICIO
+            ListTile(
+              leading: const Icon(
+                Icons.home_outlined,
+                color: Color(0xFF001E42),
+              ),
+              title: const Text('Inicio'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DashboardScreen(),
+                  ),
+                );
+              },
+            ),
+            // OPCIÓN: BONOS (Agregada aquí)
+            ListTile(
+              leading: const Icon(Icons.attach_money, color: Color(0xFF001E42)),
+              title: const Text('Registrar Bonos'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RegistrarBonos(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Cerrar Sesión',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                // Lógica de salida
+              },
+            ),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1000),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset('assets/Logo.png', height: 60),
+                const SizedBox(height: 22),
+                const Text(
+                  'Carga Masiva de Liquidaciones',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Administrador - Importación de liquidaciones en formato PDF (.zip)',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF334155)),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                const _RequisitosArchivoCard(),
+                const SizedBox(height: 28),
+                _ZonaCargaArchivo(
+                  nombreArchivo: nombreArchivo,
+                  onSeleccionar: seleccionarArchivoZip,
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: cargarArchivo,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F9F8F),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cargar Liquidaciones',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'inicial.dart';
+import 'cargaArchivos.dart';
 
 class RegistrarBonos extends StatefulWidget {
   const RegistrarBonos({super.key});
@@ -12,6 +14,88 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      // 1. BARRA SUPERIOR (Donde aparece el icono de las 3 rayas)
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF001E42), // Azul oscuro institucional
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          "Clínica Aconcagua",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      // 2. MENÚ LATERAL DESPLEGABLE
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFF001E42)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Menú de Gestión',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Sistema de Remuneraciones',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.home_outlined,
+                color: Color(0xFF001E42),
+              ),
+              title: const Text('Inicio / Panel Principal'),
+              onTap: () {
+                // Navegación al archivo inicial.dart
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DashboardScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.folder_zip, color: Color(0xFF001E42)),
+              title: const Text('Carga Masiva de Liquidaciones'),
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CargaMasivaArchivosPage(),
+                ),
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Cerrar Sesión',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                // Aquí iría tu lógica de login
+              },
+            ),
+          ],
+        ),
+      ),
+      // 3. CONTENIDO PRINCIPAL (Tu código original)
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
         child: Column(

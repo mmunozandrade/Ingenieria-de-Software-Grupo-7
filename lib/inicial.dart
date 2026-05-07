@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
 import 'iniciosesion.dart';
+import 'registroBonos.dart';
+import 'cargaArchivos.dart';
 
 void main() {
   runApp(const MyApp());
@@ -100,13 +102,24 @@ class DashboardScreen extends StatelessWidget {
                             description:
                                 'Cálculo de vacaciones progresivas según antigüedad',
                           ),
-                          _FeatureCard(
-                            icon: Icons.attach_money,
-                            iconColor: Colors.orange[700]!,
-                            iconBgColor: Colors.orange[50]!,
-                            title: 'Bonos Imponibles',
-                            description:
-                                'Registro y gestión de bonos imponibles',
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const RegistrarBonos(),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: _FeatureCard(
+                              icon: Icons.attach_money,
+                              iconColor: Colors.orange[700]!,
+                              iconBgColor: Colors.orange[50]!,
+                              title: 'Bonos Imponibles',
+                              description:
+                                  'Registro y gestión de bonos imponibles',
+                            ),
                           ),
                           _FeatureCard(
                             icon: Icons.download_outlined,
@@ -116,13 +129,25 @@ class DashboardScreen extends StatelessWidget {
                             description:
                                 'Accede y descarga liquidaciones de sueldo',
                           ),
-                          _FeatureCard(
-                            icon: Icons.upload_outlined,
-                            iconColor: Colors.indigo[400]!,
-                            iconBgColor: Colors.indigo[50]!,
-                            title: 'Carga Masiva',
-                            description:
-                                'Importa liquidaciones de forma masiva',
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const CargaMasivaArchivosPage(),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: _FeatureCard(
+                              icon: Icons.upload_outlined,
+                              iconColor: Colors.indigo[400]!,
+                              iconBgColor: Colors.indigo[50]!,
+                              title: 'Carga Masiva',
+                              description:
+                                  'Importa liquidaciones de forma masiva',
+                            ),
                           ),
                         ],
                       ),
