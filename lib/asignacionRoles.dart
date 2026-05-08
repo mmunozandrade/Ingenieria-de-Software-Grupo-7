@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'inicial.dart';
+import 'cargaArchivos.dart';
+import 'registroBonos.dart';
+import 'solicitudVacaciones.dart';
 
 class AsignacionRoles extends StatefulWidget {
   const AsignacionRoles({super.key});
@@ -9,7 +13,6 @@ class AsignacionRoles extends StatefulWidget {
 
 class _AsignacionRolesState extends State<AsignacionRoles> {
   final TextEditingController _busquedaController = TextEditingController();
-
   String textoBusqueda = '';
 
   final List<Trabajador> trabajadores = [
@@ -47,9 +50,7 @@ class _AsignacionRolesState extends State<AsignacionRoles> {
     if (textoBusqueda.trim().isEmpty) {
       return trabajadores;
     }
-
     final busqueda = textoBusqueda.toLowerCase().trim();
-
     return trabajadores.where((trabajador) {
       return trabajador.nombreCompleto.toLowerCase().contains(busqueda) ||
           trabajador.rut.toLowerCase().contains(busqueda);
@@ -109,208 +110,288 @@ class _AsignacionRolesState extends State<AsignacionRoles> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1000),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.asset("assets/Logo.png", height: 60),
 
-                  const SizedBox(height: 15),
+      // --- LA BARRA SUPERIOR AZUL ---
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF001E42),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          "Clínica Aconcagua",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
 
-                  const Text(
-                    "Gestión de Roles",
-                    style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+      // --- TU MENÚ LATERAL ---
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xFF001E42)),
+              child: Text(
+                'Menú Principal',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home_outlined),
+              title: const Text('Inicio'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const DashboardScreen(), // <-- Asegúrate que este nombre es correcto
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined),
+              title: const Text('Carga de Archivos'),
+              onTap: () {
+                // Aquí deberías poner la navegación real si tienes la pantalla
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.attach_money_outlined),
+              title: const Text('Registro de Bonos'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RegistrarBonos(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.manage_accounts_outlined),
+              title: const Text('Asignación de Roles'),
+              onTap: () {
+                Navigator.pop(
+                  context,
+                ); // Solo cierra el menú porque ya estamos en esta pantalla
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today_outlined),
+              title: const Text('Solicitud de Vacaciones'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SolicitudVacaciones(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text(
+                'Cerrar Sesión',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {},
+            ),
+          ],
+        ),
+      ),
+
+      // --- EL CUERPO DE TU PÁGINA ---
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1000),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset("assets/Logo.png", height: 60),
+                const SizedBox(height: 15),
+                const Text(
+                  "Gestión de Roles",
+                  style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Asignación de roles y permisos a trabajadores",
+                  style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 28),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 18,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xFFBFDBFE),
+                      width: 1.4,
                     ),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  const Text(
-                    "Asignación de roles y permisos a trabajadores",
-                    style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFFBFDBFE),
-                        width: 1.4,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.info_outline,
-                          color: Color(0xFF2563EB),
-                          size: 20,
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                "Roles disponibles",
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1E3A8A),
-                                ),
-                              ),
-
-                              SizedBox(height: 8),
-
-                              _BulletText(
-                                texto:
-                                    "Jefe: Acceso completo para gestión de equipo y aprobaciones. Solo puede ver la información de su área.",
-                              ),
-                              _BulletText(
-                                texto:
-                                    "Usuario: Acceso estándar para funciones básicas del sistema. Solamente ve su propia información.",
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // BUSCADOR
-                  Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Buscar Trabajador',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF334155),
-                          fontWeight: FontWeight.w500,
-                        ),
+                      const Icon(
+                        Icons.info_outline,
+                        color: Color(0xFF2563EB),
+                        size: 20,
                       ),
-
-                      const SizedBox(height: 8),
-
-                      TextField(
-                        controller: _busquedaController,
-                        onChanged: (valor) {
-                          setState(() {
-                            textoBusqueda = valor;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          hintText:
-                              'Buscar por nombre, apellido paterno, apellido materno o RUT...',
-                          hintStyle: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF94A3B8),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Color(0xFF94A3B8),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 14,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFCBD5E1),
-                              width: 1.3,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              "Roles disponibles",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E3A8A),
+                              ),
                             ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF38BDF8),
-                              width: 1.5,
+                            SizedBox(height: 8),
+                            _BulletText(
+                              texto:
+                                  "Jefe: Acceso completo para gestión de equipo y aprobaciones. Solo puede ver la información de su área.",
                             ),
-                          ),
+                            _BulletText(
+                              texto:
+                                  "Usuario: Acceso estándar para funciones básicas del sistema. Solamente ve su propia información.",
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
+                ),
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 28),
 
-                  // LISTA DE TRABAJADORES
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(10),
+                // BUSCADOR
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Buscar Trabajador',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF334155),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Lista de Trabajadores (${listaTrabajadores.length})',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFF0F172A),
-                            fontWeight: FontWeight.bold,
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _busquedaController,
+                      onChanged: (valor) {
+                        setState(() {
+                          textoBusqueda = valor;
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText:
+                            'Buscar por nombre, apellido paterno, apellido materno o RUT...',
+                        hintStyle: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFCBD5E1),
+                            width: 1.3,
                           ),
                         ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF38BDF8),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
-                        const SizedBox(height: 18),
+                const SizedBox(height: 24),
 
-                        if (listaTrabajadores.isEmpty)
-                          const Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 30),
-                              child: Text(
-                                'No se encontraron trabajadores.',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF64748B),
-                                ),
+                // LISTA DE TRABAJADORES
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Lista de Trabajadores (${listaTrabajadores.length})',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Color(0xFF0F172A),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      if (listaTrabajadores.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 30),
+                            child: Text(
+                              'No se encontraron trabajadores.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF64748B),
                               ),
                             ),
-                          )
-                        else
-                          Column(
-                            children: listaTrabajadores.map((trabajador) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 14),
-                                child: _TrabajadorCard(
-                                  trabajador: trabajador,
-                                  onAsignarRol: () {
-                                    cambiarRol(trabajador);
-                                  },
-                                ),
-                              );
-                            }).toList(),
                           ),
-                      ],
-                    ),
+                        )
+                      else
+                        Column(
+                          children: listaTrabajadores.map((trabajador) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: _TrabajadorCard(
+                                trabajador: trabajador,
+                                onAsignarRol: () {
+                                  cambiarRol(trabajador);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -379,16 +460,12 @@ class _TrabajadorCard extends StatelessWidget {
                           _RolBadge(rol: trabajador.rol),
                         ],
                       ),
-
                       const SizedBox(height: 10),
-
                       _DatoTrabajadorLista(
                         icono: Icons.badge_outlined,
                         texto: 'RUT: ${trabajador.rut}',
                       ),
-
                       const SizedBox(height: 6),
-
                       _DatoTrabajadorLista(
                         icono: Icons.calendar_month_outlined,
                         texto: 'Ingreso: ${trabajador.fechaIngreso}',
@@ -396,14 +473,12 @@ class _TrabajadorCard extends StatelessWidget {
                     ],
                   ),
                 ),
-
                 SizedBox(
                   width: 320,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 30),
-
                       _DatoTrabajadorLista(
                         icono: Icons.work_outline,
                         texto: trabajador.cargo,
@@ -414,9 +489,7 @@ class _TrabajadorCard extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(width: 16),
-
           ElevatedButton.icon(
             onPressed: onAsignarRol,
             icon: const Icon(Icons.edit_outlined, size: 16),
@@ -493,9 +566,7 @@ class _DatoTrabajadorLista extends StatelessWidget {
     return Row(
       children: [
         Icon(icono, size: 15, color: const Color(0xFF94A3B8)),
-
         const SizedBox(width: 6),
-
         Expanded(
           child: Text(
             texto,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'inicial.dart'; // Para ir al Dashboard al ingresar
-import 'login.dart'; // Para ir al Registro si no tiene cuenta
+import 'inicial.dart';
+import 'login.dart';
 
 class IniciarSesionPage extends StatefulWidget {
   const IniciarSesionPage({super.key});
