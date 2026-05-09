@@ -3,6 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'inicial.dart';
 import 'registroBonos.dart';
+import 'solicitudVacaciones.dart';
+import 'asignacionRoles.dart';
 
 class CargaMasivaArchivosPage extends StatefulWidget {
   const CargaMasivaArchivosPage({super.key});
@@ -120,7 +122,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 );
               },
             ),
-            // OPCIÓN: BONOS (Agregada aquí)
+            // OPCIÓN: BONOS
             ListTile(
               leading: const Icon(Icons.attach_money, color: Color(0xFF001E42)),
               title: const Text('Registrar Bonos'),
@@ -133,6 +135,38 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 );
               },
             ),
+            // OPCIÓN: VACACIONES
+            ListTile(
+              leading: const Icon(
+                Icons.calendar_today_outlined,
+                color: Color(0xFF001E42),
+              ),
+              title: const Text('Solicitud de Vacaciones'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SolicitudVacaciones(),
+                  ),
+                );
+              },
+            ),
+            // OPCIÓN: ASIGNACIÓN DE ROLES
+            ListTile(
+              leading: const Icon(
+                Icons.manage_accounts_outlined,
+                color: Color(0xFF001E42),
+              ),
+              title: const Text('Asignación de Roles'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AsignacionRoles(),
+                  ),
+                );
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
@@ -140,71 +174,9 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 'Cerrar Sesión',
                 style: TextStyle(color: Colors.red),
               ),
-              onTap: () {
-                // Lógica de salida
-              },
+              onTap: () {},
             ),
           ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1000),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Image.asset('assets/Logo.png', height: 60),
-                const SizedBox(height: 22),
-                const Text(
-                  'Carga Masiva de Liquidaciones',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Administrador - Importación de liquidaciones en formato PDF (.zip)',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF334155)),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                const _RequisitosArchivoCard(),
-                const SizedBox(height: 28),
-                _ZonaCargaArchivo(
-                  nombreArchivo: nombreArchivo,
-                  onSeleccionar: seleccionarArchivoZip,
-                ),
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: double.infinity,
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: cargarArchivo,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F9F8F),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Cargar Liquidaciones',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

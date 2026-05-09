@@ -4,6 +4,8 @@ import 'iniciosesion.dart';
 import 'registroBonos.dart';
 import 'cargaArchivos.dart';
 import 'vacacionesProgresivas.dart';
+import 'solicitudVacaciones.dart';
+import 'asignacionRoles.dart';
 
 void main() {
   runApp(const MyApp());
@@ -79,13 +81,27 @@ class DashboardScreen extends StatelessWidget {
                         runSpacing: 24,
                         alignment: WrapAlignment.center,
                         children: [
-                          _FeatureCard(
-                            icon: Icons.calendar_today_outlined,
-                            iconColor: Colors.blue[700]!,
-                            iconBgColor: Colors.blue[50]!,
-                            title: 'Solicitud de Vacaciones',
-                            description:
-                                'Gestiona y solicita vacaciones con calendario interactivo',
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const SolicitudVacaciones(),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(
+                              12,
+                            ), // Asegura que el clic respete los bordes curvos
+                            child: _FeatureCard(
+                              icon: Icons.calendar_today_outlined,
+                              iconColor: Colors.blue[700]!,
+                              iconBgColor: Colors.blue[50]!,
+                              title: 'Solicitud de Vacaciones',
+                              description:
+                                  'Gestiona y solicita vacaciones con calendario interactivo',
+                            ),
                           ),
                           _FeatureCard(
                             icon: Icons.calculate_outlined,
@@ -168,6 +184,25 @@ class DashboardScreen extends StatelessWidget {
                               title: 'Carga Masiva',
                               description:
                                   'Importa liquidaciones de forma masiva',
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AsignacionRoles(),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: _FeatureCard(
+                              icon: Icons.admin_panel_settings_outlined,
+                              iconColor: Colors.green[400]!,
+                              iconBgColor: Colors.green[50]!,
+                              title: 'Asignación de Roles',
+                              description:
+                                  'Asigna roles y permisos a los usuarios',
                             ),
                           ),
                         ],

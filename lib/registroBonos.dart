@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'inicial.dart';
 import 'cargaArchivos.dart';
+import 'solicitudVacaciones.dart';
+import 'asignacionRoles.dart';
 
 class RegistrarBonos extends StatefulWidget {
   const RegistrarBonos({super.key});
@@ -14,9 +16,8 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // 1. BARRA SUPERIOR (Donde aparece el icono de las 3 rayas)
       appBar: AppBar(
-        backgroundColor: const Color(0xFF001E42), // Azul oscuro institucional
+        backgroundColor: const Color(0xFF001E42),
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
@@ -81,6 +82,38 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
                 ),
               ),
             ),
+            // OPCIÓN: SOLICITUD DE VACACIONES
+            ListTile(
+              leading: const Icon(
+                Icons.calendar_today_outlined,
+                color: Color(0xFF001E42),
+              ),
+              title: const Text('Solicitud de Vacaciones'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SolicitudVacaciones(),
+                  ),
+                );
+              },
+            ),
+            // OPCIÓN: ASIGNACIÓN DE ROLES
+            ListTile(
+              leading: const Icon(
+                Icons.manage_accounts_outlined,
+                color: Color(0xFF001E42),
+              ),
+              title: const Text('Asignación de Roles'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AsignacionRoles(),
+                  ),
+                );
+              },
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
@@ -88,9 +121,7 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
                 'Cerrar Sesión',
                 style: TextStyle(color: Colors.red),
               ),
-              onTap: () {
-                // Aquí iría tu lógica de login
-              },
+              onTap: () {},
             ),
           ],
         ),
@@ -162,9 +193,7 @@ class _InfoTrabajadorCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-
           const SizedBox(height: 22),
-
           Row(
             children: const [
               Expanded(
