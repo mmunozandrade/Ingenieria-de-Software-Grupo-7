@@ -145,8 +145,7 @@ class _AsignacionRolesState extends State<AsignacionRoles> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        const DashboardScreen(), // <-- Asegúrate que este nombre es correcto
+                    builder: (context) => const DashboardScreen(),
                   ),
                 );
               },
@@ -174,9 +173,7 @@ class _AsignacionRolesState extends State<AsignacionRoles> {
               leading: const Icon(Icons.manage_accounts_outlined),
               title: const Text('Asignación de Roles'),
               onTap: () {
-                Navigator.pop(
-                  context,
-                ); // Solo cierra el menú porque ya estamos en esta pantalla
+                Navigator.pop(context);
               },
             ),
             ListTile(

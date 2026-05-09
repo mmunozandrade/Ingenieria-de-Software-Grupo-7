@@ -5,6 +5,7 @@ import 'registroBonos.dart';
 import 'cargaArchivos.dart';
 import 'solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
+import 'calculoHextra.dart';
 
 void main() {
   runApp(const MyApp());
@@ -102,13 +103,24 @@ class DashboardScreen extends StatelessWidget {
                                   'Gestiona y solicita vacaciones con calendario interactivo',
                             ),
                           ),
-                          _FeatureCard(
-                            icon: Icons.calculate_outlined,
-                            iconColor: Colors.teal[700]!,
-                            iconBgColor: Colors.teal[50]!,
-                            title: 'Cálculo de Horas Extras',
-                            description:
-                                'Registro y cálculo automático con recargo del 50%',
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const CalculoHextra(),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: _FeatureCard(
+                              icon: Icons.calculate_outlined,
+                              iconColor: Colors.teal[700]!,
+                              iconBgColor: Colors.teal[50]!,
+                              title: 'Cálculo de Horas Extras',
+                              description:
+                                  'Registro y cálculo automático con recargo del 50%',
+                            ),
                           ),
                           _FeatureCard(
                             icon: Icons.trending_up,
@@ -207,16 +219,21 @@ class DashboardScreen extends StatelessWidget {
   // Widget para la barra superior (Recibe el BuildContext)
   Widget _buildTopBar(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       color: Colors.white,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 16,
         children: [
           // Logo
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(width: 8),
-              Image.asset('assets/Logo.png', height: 100),
+              Image.asset('assets/Logo.png', height: 80),
               const SizedBox(height: 20),
             ],
           ),
@@ -234,7 +251,7 @@ class DashboardScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF009A8D),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -253,7 +270,7 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildBottomCard(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -278,7 +295,7 @@ class DashboardScreen extends StatelessWidget {
               const Text(
                 '¿Primera vez en el sistema?',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF141C24),
                 ),
@@ -291,8 +308,10 @@ class DashboardScreen extends StatelessWidget {
             style: TextStyle(color: Color(0xFF6B7280)),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 16,
             children: [
               // Botón Registrar
               ElevatedButton(
@@ -310,7 +329,7 @@ class DashboardScreen extends StatelessWidget {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
-                    vertical: 18,
+                    vertical: 16,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
