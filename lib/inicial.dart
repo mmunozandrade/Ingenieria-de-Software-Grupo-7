@@ -3,6 +3,7 @@ import 'login.dart';
 import 'iniciosesion.dart';
 import 'registroBonos.dart';
 import 'cargaArchivos.dart';
+import 'vacacionesProgresivas.dart';
 
 void main() {
   runApp(const MyApp());
@@ -101,6 +102,26 @@ class DashboardScreen extends StatelessWidget {
                             title: 'Vacaciones Progresivas',
                             description:
                                 'Cálculo de vacaciones progresivas según antigüedad',
+                          ),
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const VacacionesProgresivas(),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: _FeatureCard(
+                              icon: Icons.trending_up,
+                              iconColor: Colors.purple[700]!,
+                              iconBgColor: Colors.purple[50]!,
+                              title: 'Vacaciones Progresivas',
+                              description:
+                                  'Cálculo de vacaciones progresivas según antigüedad',
+                            ),
                           ),
                           InkWell(
                             onTap: () {
