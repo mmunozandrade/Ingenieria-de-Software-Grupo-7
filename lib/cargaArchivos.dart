@@ -5,6 +5,8 @@ import 'inicial.dart';
 import 'registroBonos.dart';
 import 'solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
+import 'calculoHextra.dart';
+import 'descargaLiquidacion.dart';
 
 class CargaMasivaArchivosPage extends StatefulWidget {
   const CargaMasivaArchivosPage({super.key});
@@ -106,12 +108,8 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 ],
               ),
             ),
-            // OPCIÓN: INICIO
             ListTile(
-              leading: const Icon(
-                Icons.home_outlined,
-                color: Color(0xFF001E42),
-              ),
+              leading: const Icon(Icons.home_outlined),
               title: const Text('Inicio'),
               onTap: () {
                 Navigator.pushReplacement(
@@ -122,25 +120,9 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 );
               },
             ),
-            // OPCIÓN: BONOS
+            // --- SECCIÓN: MI PORTAL (USUARIO) ---
             ListTile(
-              leading: const Icon(Icons.attach_money, color: Color(0xFF001E42)),
-              title: const Text('Registrar Bonos'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RegistrarBonos(),
-                  ),
-                );
-              },
-            ),
-            // OPCIÓN: VACACIONES
-            ListTile(
-              leading: const Icon(
-                Icons.calendar_today_outlined,
-                color: Color(0xFF001E42),
-              ),
+              leading: const Icon(Icons.calendar_today_outlined),
               title: const Text('Solicitud de Vacaciones'),
               onTap: () {
                 Navigator.pushReplacement(
@@ -151,12 +133,46 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 );
               },
             ),
-            // OPCIÓN: ASIGNACIÓN DE ROLES
             ListTile(
-              leading: const Icon(
-                Icons.manage_accounts_outlined,
-                color: Color(0xFF001E42),
-              ),
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('Mis Liquidaciones'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DescargaLiquidacion(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            // --- SECCIÓN: ADMINISTRACIÓN ---
+            ListTile(
+              leading: const Icon(Icons.attach_money_outlined),
+              title: const Text('Registro de Bonos'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RegistrarBonos(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calculate_outlined),
+              title: const Text('Cálculo de Horas Extra'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CalculoHextra(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.manage_accounts_outlined),
               title: const Text('Asignación de Roles'),
               onTap: () {
                 Navigator.pushReplacement(
@@ -167,7 +183,18 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 );
               },
             ),
-            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined),
+              title: const Text('Carga de Archivos'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CargaMasivaArchivosPage(),
+                  ),
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(
@@ -177,6 +204,70 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
               onTap: () {},
             ),
           ],
+        ),
+      ),
+
+      // ==========================================
+      // AQUÍ ESTÁ LA SOLUCIÓN: AGREGAMOS EL BODY
+      // ==========================================
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Carga Masiva de Archivos",
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Sube un archivo comprimido (.zip) con las liquidaciones de sueldo de los trabajadores.",
+                  style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                ),
+                const SizedBox(height: 32),
+                // Llamamos a tu tarjeta de requisitos
+                const _RequisitosArchivoCard(),
+                const SizedBox(height: 32),
+                // Llamamos a tu zona de carga de archivos
+                _ZonaCargaArchivo(
+                  nombreArchivo: nombreArchivo,
+                  onSeleccionar: seleccionarArchivoZip,
+                ),
+                const SizedBox(height: 32),
+                // Botón para subir
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: cargarArchivo,
+                    icon: const Icon(Icons.cloud_upload),
+                    label: const Text(
+                      'Subir Archivo al Sistema',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF001E42),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -200,9 +291,7 @@ class _RequisitosArchivoCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(Icons.info_outline, color: Color(0xFF2563EB), size: 20),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,9 +304,7 @@ class _RequisitosArchivoCard extends StatelessWidget {
                     color: Color(0xFF1E3A8A),
                   ),
                 ),
-
                 SizedBox(height: 8),
-
                 _BulletText(texto: 'Formato: Archivo .zip'),
                 _BulletText(texto: 'Máximo: 50 liquidaciones'),
                 _BulletTextConEtiqueta(
@@ -360,9 +447,7 @@ class _ZonaCargaArchivo extends StatelessWidget {
                   color: const Color(0xFF0F9F8F),
                 ),
               ),
-
               const SizedBox(height: 22),
-
               Text(
                 archivoSeleccionado
                     ? 'Archivo seleccionado'
@@ -374,9 +459,7 @@ class _ZonaCargaArchivo extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 8),
-
               Text(
                 archivoSeleccionado
                     ? nombreArchivo!
@@ -392,9 +475,7 @@ class _ZonaCargaArchivo extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 18),
-
               SizedBox(
                 height: 42,
                 child: ElevatedButton(

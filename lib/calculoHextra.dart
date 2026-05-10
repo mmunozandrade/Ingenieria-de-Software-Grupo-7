@@ -4,6 +4,7 @@ import 'cargaArchivos.dart';
 import 'registroBonos.dart';
 import 'solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
+import 'descargaLiquidacion.dart';
 
 class CalculoHextra extends StatefulWidget {
   const CalculoHextra({super.key});
@@ -108,11 +109,33 @@ class _CalculoHoraExtraState extends State<CalculoHextra> {
                 );
               },
             ),
+            // --- SECCIÓN: MI PORTAL (USUARIO) ---
             ListTile(
-              leading: const Icon(Icons.upload_file_outlined),
-              title: const Text('Carga de Archivos'),
-              onTap: () {},
+              leading: const Icon(Icons.calendar_today_outlined),
+              title: const Text('Solicitud de Vacaciones'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SolicitudVacaciones(),
+                  ),
+                );
+              },
             ),
+            ListTile(
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('Mis Liquidaciones'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DescargaLiquidacion(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            // --- SECCIÓN: ADMINISTRACIÓN ---
             ListTile(
               leading: const Icon(Icons.attach_money_outlined),
               title: const Text('Registro de Bonos'),
@@ -121,6 +144,18 @@ class _CalculoHoraExtraState extends State<CalculoHextra> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const RegistrarBonos(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calculate_outlined),
+              title: const Text('Cálculo de Horas Extra'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CalculoHextra(),
                   ),
                 );
               },
@@ -138,13 +173,14 @@ class _CalculoHoraExtraState extends State<CalculoHextra> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.calendar_today_outlined),
-              title: const Text('Solicitud de Vacaciones'),
+              leading: const Icon(Icons.upload_file_outlined),
+              title: const Text('Carga de Archivos'),
               onTap: () {
                 Navigator.pushReplacement(
                   context,
+                  // Asumo que tu clase se llama CargaMasivaArchivosPage como lo mostraste antes
                   MaterialPageRoute(
-                    builder: (context) => const SolicitudVacaciones(),
+                    builder: (context) => const CargaMasivaArchivosPage(),
                   ),
                 );
               },

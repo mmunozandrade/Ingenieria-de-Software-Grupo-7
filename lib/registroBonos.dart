@@ -3,6 +3,8 @@ import 'inicial.dart';
 import 'cargaArchivos.dart';
 import 'solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
+import 'calculoHextra.dart';
+import 'descargaLiquidacion.dart';
 
 class RegistrarBonos extends StatefulWidget {
   const RegistrarBonos({super.key});
@@ -57,13 +59,9 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
               ),
             ),
             ListTile(
-              leading: const Icon(
-                Icons.home_outlined,
-                color: Color(0xFF001E42),
-              ),
-              title: const Text('Inicio / Panel Principal'),
+              leading: const Icon(Icons.home_outlined),
+              title: const Text('Inicio'),
               onTap: () {
-                // Navegación al archivo inicial.dart
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
@@ -72,22 +70,9 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
                 );
               },
             ),
+            // --- SECCIÓN: MI PORTAL (USUARIO) ---
             ListTile(
-              leading: const Icon(Icons.folder_zip, color: Color(0xFF001E42)),
-              title: const Text('Carga Masiva de Liquidaciones'),
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CargaMasivaArchivosPage(),
-                ),
-              ),
-            ),
-            // OPCIÓN: SOLICITUD DE VACACIONES
-            ListTile(
-              leading: const Icon(
-                Icons.calendar_today_outlined,
-                color: Color(0xFF001E42),
-              ),
+              leading: const Icon(Icons.calendar_today_outlined),
               title: const Text('Solicitud de Vacaciones'),
               onTap: () {
                 Navigator.pushReplacement(
@@ -98,12 +83,46 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
                 );
               },
             ),
-            // OPCIÓN: ASIGNACIÓN DE ROLES
             ListTile(
-              leading: const Icon(
-                Icons.manage_accounts_outlined,
-                color: Color(0xFF001E42),
-              ),
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('Mis Liquidaciones'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DescargaLiquidacion(),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            // --- SECCIÓN: ADMINISTRACIÓN ---
+            ListTile(
+              leading: const Icon(Icons.attach_money_outlined),
+              title: const Text('Registro de Bonos'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RegistrarBonos(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calculate_outlined),
+              title: const Text('Cálculo de Horas Extra'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CalculoHextra(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.manage_accounts_outlined),
               title: const Text('Asignación de Roles'),
               onTap: () {
                 Navigator.pushReplacement(
@@ -114,7 +133,19 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
                 );
               },
             ),
-            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined),
+              title: const Text('Carga de Archivos'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  // Asumo que tu clase se llama CargaMasivaArchivosPage como lo mostraste antes
+                  MaterialPageRoute(
+                    builder: (context) => const CargaMasivaArchivosPage(),
+                  ),
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(

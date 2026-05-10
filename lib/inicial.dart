@@ -7,6 +7,7 @@ import 'vacacionesProgresivas.dart';
 import 'solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
 import 'calculoHextra.dart';
+import 'descargaLiquidacion.dart';
 
 void main() {
   runApp(const MyApp());
@@ -123,14 +124,6 @@ class DashboardScreen extends StatelessWidget {
                                   'Registro y cálculo automático con recargo del 50%',
                             ),
                           ),
-                          _FeatureCard(
-                            icon: Icons.trending_up,
-                            iconColor: Colors.purple[700]!,
-                            iconBgColor: Colors.purple[50]!,
-                            title: 'Vacaciones Progresivas',
-                            description:
-                                'Cálculo de vacaciones progresivas según antigüedad',
-                          ),
                           InkWell(
                             onTap: () {
                               Navigator.push(
@@ -170,13 +163,25 @@ class DashboardScreen extends StatelessWidget {
                                   'Registro y gestión de bonos imponibles',
                             ),
                           ),
-                          _FeatureCard(
-                            icon: Icons.download_outlined,
-                            iconColor: Colors.red[400]!,
-                            iconBgColor: Colors.red[50]!,
-                            title: 'Descarga de Liquidaciones',
-                            description:
-                                'Accede y descarga liquidaciones de sueldo',
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const DescargaLiquidacion(),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: _FeatureCard(
+                              icon: Icons.download_outlined,
+                              iconColor: Colors.red[400]!,
+                              iconBgColor: Colors.red[50]!,
+                              title: 'Descarga de Liquidaciones',
+                              description:
+                                  'Accede y descarga liquidaciones de sueldo',
+                            ),
                           ),
                           InkWell(
                             onTap: () {
