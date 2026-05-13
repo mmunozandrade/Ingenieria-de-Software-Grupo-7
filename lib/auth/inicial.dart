@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
+import 'registro.dart';
 import 'iniciosesion.dart';
-import 'registroBonos.dart';
-import 'cargaArchivos.dart';
-import 'vacacionesProgresivas.dart';
-import 'solicitudVacaciones.dart';
-import 'asignacionRoles.dart';
-import 'calculoHextra.dart';
-import 'descargaLiquidacion.dart';
+import '../screens/ADMIN/registroBonos.dart';
+import '../screens/ADMIN/cargaArchivos.dart';
+import '../screens/USUARIO/vacacionesProgresivas.dart';
+import '../screens/USUARIO/solicitudVacaciones.dart';
+import '../screens/ADMIN/asignacionRoles.dart';
+import '../screens/ADMIN/calculoHextra.dart';
+import '../screens/USUARIO/descargaLiquidacion.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
 }
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -404,13 +404,13 @@ class _FeatureCard extends StatelessWidget {
   final String description;
 
   const _FeatureCard({
-    Key? key,
+    super.key,
     required this.icon,
     required this.iconColor,
     required this.iconBgColor,
     required this.title,
     required this.description,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

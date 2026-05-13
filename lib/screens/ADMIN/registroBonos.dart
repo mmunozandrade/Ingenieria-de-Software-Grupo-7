@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'inicial.dart';
+import '../../auth/inicial.dart';
 import 'cargaArchivos.dart';
-import 'solicitudVacaciones.dart';
+import '../USUARIO/solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
 import 'calculoHextra.dart';
-import 'descargaLiquidacion.dart';
+import '../USUARIO/descargaLiquidacion.dart';
 
 class RegistrarBonos extends StatefulWidget {
   const RegistrarBonos({super.key});
@@ -516,7 +516,7 @@ class _CampoSelect extends StatelessWidget {
         const SizedBox(height: 8),
 
         DropdownButtonFormField<String>(
-          value: null,
+          initialValue: null,
           decoration: InputDecoration(
             filled: true,
             fillColor: const Color(0xFFF8FAFC),

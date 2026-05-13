@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'inicial.dart';
+import '../../auth/inicial.dart';
 import 'cargaArchivos.dart';
 import 'registroBonos.dart';
-import 'solicitudVacaciones.dart';
+import '../USUARIO/solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
-import 'descargaLiquidacion.dart';
+import '../USUARIO/descargaLiquidacion.dart';
 
 class CalculoHextra extends StatefulWidget {
   const CalculoHextra({super.key});
@@ -532,7 +532,7 @@ class _CalculoHoraExtraState extends State<CalculoHextra> {
                           ),
                         ],
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),

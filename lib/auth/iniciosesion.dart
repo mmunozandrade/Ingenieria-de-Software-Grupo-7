@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'inicial.dart';
-import 'login.dart';
+import 'registro.dart';
 
 class IniciarSesionPage extends StatefulWidget {
   const IniciarSesionPage({super.key});

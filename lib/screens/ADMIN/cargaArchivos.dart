@@ -1,12 +1,12 @@
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'inicial.dart';
+import '../../auth/inicial.dart';
 import 'registroBonos.dart';
-import 'solicitudVacaciones.dart';
+import '../USUARIO/solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
 import 'calculoHextra.dart';
-import 'descargaLiquidacion.dart';
+import '../USUARIO/descargaLiquidacion.dart';
 
 class CargaMasivaArchivosPage extends StatefulWidget {
   const CargaMasivaArchivosPage({super.key});

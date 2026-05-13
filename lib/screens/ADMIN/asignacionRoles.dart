@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'inicial.dart';
+import '../../auth/inicial.dart';
 import 'cargaArchivos.dart';
 import 'registroBonos.dart';
-import 'solicitudVacaciones.dart';
+import '../USUARIO/solicitudVacaciones.dart';
 import 'calculoHextra.dart';
-import 'descargaLiquidacion.dart';
+import '../USUARIO/descargaLiquidacion.dart';
 
 class AsignacionRoles extends StatefulWidget {
   const AsignacionRoles({super.key});

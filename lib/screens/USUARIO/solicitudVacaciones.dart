@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'inicial.dart';
-import 'cargaArchivos.dart';
-import 'registroBonos.dart';
-import 'asignacionRoles.dart';
-import 'calculoHextra.dart';
+import '../../auth/inicial.dart';
+import '../ADMIN/cargaArchivos.dart';
+import '../ADMIN/registroBonos.dart';
+import '../ADMIN/asignacionRoles.dart';
+import '../ADMIN/calculoHextra.dart';
 import 'descargaLiquidacion.dart';
 
 class SolicitudVacaciones extends StatefulWidget {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'inicial.dart';
-import 'cargaArchivos.dart';
-import 'registroBonos.dart';
+import '../../auth/inicial.dart';
+import '../ADMIN/cargaArchivos.dart';
+import '../ADMIN/registroBonos.dart';
 import 'solicitudVacaciones.dart';
-import 'asignacionRoles.dart';
-import 'calculoHextra.dart';
+import '../ADMIN/asignacionRoles.dart';
+import '../ADMIN/calculoHextra.dart';
 
 class DescargaLiquidacion extends StatefulWidget {
   const DescargaLiquidacion({super.key});
