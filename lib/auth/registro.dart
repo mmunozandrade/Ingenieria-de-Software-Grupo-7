@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'inicial.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'iniciosesion.dart';
+
+const String apiUrl = 'http://127.0.0.1:8000';
 
 class RegistroPage extends StatefulWidget {
   const RegistroPage({super.key});
@@ -9,7 +12,136 @@ class RegistroPage extends StatefulWidget {
 }
 
 class _RegistroPageState extends State<RegistroPage> {
+  // Controladores
+  final TextEditingController _correoController = TextEditingController();
+  final TextEditingController _contrasenaController = TextEditingController();
+  final TextEditingController _confirmarController = TextEditingController();
+
+  // Estado
   bool _obscureText = true;
+  bool _obscureConfirmar = true;
+  bool _cargando = false;
+  String _error = '';
+  String _exito = '';
+
+  // Validaciones en tiempo real
+  bool get _tiene8Caracteres => _contrasenaController.text.length >= 8;
+  bool get _tieneMayuscula =>
+      _contrasenaController.text.contains(RegExp(r'[A-Z]'));
+  bool get _tieneMinuscula =>
+      _contrasenaController.text.contains(RegExp(r'[a-z]'));
+  bool get _tieneNumero =>
+      _contrasenaController.text.contains(RegExp(r'[0-9]'));
+  bool get _tieneEspecial =>
+      _contrasenaController.text.contains(RegExp(r'[!@#\$%^&*]'));
+  bool get _contrasenaValida =>
+      _tiene8Caracteres &&
+      _tieneMayuscula &&
+      _tieneMinuscula &&
+      _tieneNumero &&
+      _tieneEspecial;
+
+  // Nivel de seguridad de la contraseña
+  String get _nivelSeguridad {
+    int puntos = [
+      _tiene8Caracteres,
+      _tieneMayuscula,
+      _tieneMinuscula,
+      _tieneNumero,
+      _tieneEspecial,
+    ].where((v) => v).length;
+    if (puntos <= 2) return 'Débil';
+    if (puntos <= 3) return 'Media';
+    return 'Fuerte';
+  }
+
+  Color get _colorSeguridad {
+    switch (_nivelSeguridad) {
+      case 'Débil':
+        return Colors.red;
+      case 'Media':
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
+  }
+
+  // ── Llamada a la API ────────────────────────────────────────
+  Future<void> _registrar() async {
+    final correo = _correoController.text.trim();
+    final contrasena = _contrasenaController.text.trim();
+    final confirmar = _confirmarController.text.trim();
+
+    // Validaciones locales
+    if (correo.isEmpty || contrasena.isEmpty || confirmar.isEmpty) {
+      setState(() => _error = 'Por favor completa todos los campos.');
+      return;
+    }
+    if (!correo.endsWith('@accaconcagua.cl')) {
+      setState(
+        () => _error = 'Debes usar tu correo institucional @accaconcagua.cl',
+      );
+      return;
+    }
+    if (!_contrasenaValida) {
+      setState(
+        () =>
+            _error = 'La contraseña no cumple con los requisitos de seguridad.',
+      );
+      return;
+    }
+    if (contrasena != confirmar) {
+      setState(() => _error = 'Las contraseñas no coinciden.');
+      return;
+    }
+
+    setState(() {
+      _cargando = true;
+      _error = '';
+      _exito = '';
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('$apiUrl/registro'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'correo': correo, 'contrasena': contrasena}),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (data['success'] == true) {
+        setState(
+          () =>
+              _exito = '¡Cuenta creada exitosamente! Ya puedes iniciar sesión.',
+        );
+        // Esperar 2 segundos y navegar al login
+        await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const IniciarSesionPage()),
+        );
+      } else {
+        setState(() => _error = data['mensaje'] ?? 'Error al crear la cuenta.');
+      }
+    } catch (e) {
+      setState(
+        () => _error = 'No se pudo conectar al servidor. Verifica tu conexión.',
+      );
+    } finally {
+      setState(() => _cargando = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _correoController.dispose();
+    _contrasenaController.dispose();
+    _confirmarController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,7 +152,7 @@ class _RegistroPageState extends State<RegistroPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo y Título (Aconcagua)
+              // Logo
               Image.asset('assets/Logo.png', height: 100),
               const SizedBox(height: 20),
               const Text(
@@ -37,20 +169,27 @@ class _RegistroPageState extends State<RegistroPage> {
               ),
               const SizedBox(height: 30),
 
-              // Campo Correo
+              // ── Campo Correo ───────────────────────────────
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'CorreoInstitucional',
+                  'Correo Institucional',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
+                controller: _correoController,
+                keyboardType: TextInputType.emailAddress,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'usuario@accaconcagua.cl',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.email_outlined,
+                    color: Colors.grey,
                   ),
                 ),
               ),
@@ -62,7 +201,8 @@ class _RegistroPageState extends State<RegistroPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Campo Contraseña
+
+              // ── Campo Contraseña ───────────────────────────
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -72,11 +212,17 @@ class _RegistroPageState extends State<RegistroPage> {
               ),
               const SizedBox(height: 8),
               TextField(
+                controller: _contrasenaController,
                 obscureText: _obscureText,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'Ingrese su contraseña',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey,
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -87,74 +233,201 @@ class _RegistroPageState extends State<RegistroPage> {
                   ),
                 ),
               ),
-              // Lista de validaciones (Visual)
+
+              // Indicador de seguridad
+              if (_contrasenaController.text.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text(
+                      'Seguridad: ',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    Text(
+                      _nivelSeguridad,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _colorSeguridad,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Validaciones en tiempo real
               const SizedBox(height: 10),
-              _buildValidationItem("Mínimo 8 caracteres"),
-              _buildValidationItem("Al menos una mayúscula"),
-              _buildValidationItem("Al menos una minúscula"),
-              _buildValidationItem("Al menos un número"),
+              _buildValidationItem('Mínimo 8 caracteres', _tiene8Caracteres),
+              _buildValidationItem('Al menos una mayúscula', _tieneMayuscula),
+              _buildValidationItem('Al menos una minúscula', _tieneMinuscula),
+              _buildValidationItem('Al menos un número', _tieneNumero),
+              _buildValidationItem(
+                'Al menos un carácter especial (!@#\$%^&*)',
+                _tieneEspecial,
+              ),
               const SizedBox(height: 20),
-              // Confirmar Contraseña
+
+              // ── Confirmar Contraseña ───────────────────────
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'ConfirmarContraseña',
+                  'Confirmar Contraseña',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 8),
               TextField(
-                obscureText: true,
+                controller: _confirmarController,
+                obscureText: _obscureConfirmar,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'Confirme su contraseña',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
+                  prefixIcon: const Icon(
+                    Icons.lock_outline,
+                    color: Colors.grey,
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscureConfirmar
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscureConfirmar = !_obscureConfirmar),
+                  ),
+                  // Borde rojo si no coinciden
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color:
+                          _confirmarController.text.isNotEmpty &&
+                              _confirmarController.text !=
+                                  _contrasenaController.text
+                          ? Colors.red
+                          : Colors.grey.shade400,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 30),
+              if (_confirmarController.text.isNotEmpty &&
+                  _confirmarController.text != _contrasenaController.text)
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Las contraseñas no coinciden',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              const SizedBox(height: 20),
 
-              // Botón Registrar
+              // ── Mensaje de error ───────────────────────────
+              if (_error.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _error,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // ── Mensaje de éxito ───────────────────────────
+              if (_exito.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.green,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _exito,
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // ── Botón Registrar ────────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Navegación hacia el archivo inicial.dart
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const DashboardScreen(), // <-- Asegúrate que este sea el nombre de la clase en inicial.dart
-                      ),
-                    );
-                  },
+                  onPressed: _cargando ? null : _registrar,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00897B),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: const Text(
-                    'Registrar Cuenta',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                  child: _cargando
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          'Registrar Cuenta',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
+
+              // ── Link al login ──────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text('¿Ya tienes una cuenta? '),
                   TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const IniciarSesionPage(),
-                        ),
-                      );
-                    },
+                    onPressed: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const IniciarSesionPage(),
+                      ),
+                    ),
                     child: const Text(
                       'Iniciar Sesión',
                       style: TextStyle(
@@ -172,13 +445,26 @@ class _RegistroPageState extends State<RegistroPage> {
     );
   }
 
-  Widget _buildValidationItem(String text) {
-    return Row(
-      children: [
-        const Icon(Icons.check, size: 14, color: Colors.grey),
-        const SizedBox(width: 5),
-        Text(text, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
+  Widget _buildValidationItem(String texto, bool cumple) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(
+            cumple ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 14,
+            color: cumple ? Colors.green : Colors.grey,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            texto,
+            style: TextStyle(
+              fontSize: 12,
+              color: cumple ? Colors.green : Colors.grey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -36,8 +36,7 @@ class MenuLateral extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.home_outlined),
             title: const Text('Inicio'),
-            onTap: () =>
-                _navegar(context, DashboardScreen(rolUsuario: rolUsuario)),
+            onTap: () => _navegar(context, DashboardScreen()),
           ),
 
           // --- SECCIÓN: FUNCIONARIO (TODOS VEN ESTO) ---
