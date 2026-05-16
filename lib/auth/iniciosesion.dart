@@ -1,8 +1,11 @@
+import 'package:aconcagua/auth/auth.guard.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'session_service.dart';
 import 'registro.dart';
+import '../screens/fichaUsuario.dart';
+
 // Pantallas ADMIN
 import '../screens/ADMIN/aprobarSolicitudesV.dart';
 import '../screens/ADMIN/asignacionRoles.dart';
@@ -33,125 +36,144 @@ class AdminDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF001E42),
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Panel Administrador',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            tooltip: 'Cerrar sesión',
-            onPressed: () => _cerrarSesion(context),
+    return AuthGuard(
+      rolRequerido: 'admin',
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F7FB),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF001E42),
+          automaticallyImplyLeading: false,
+          title: const Text(
+            'Panel Administrador',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Tarjeta bienvenida
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF001E42),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Bienvenido/a, $nombreCompleto',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    cargo,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Rol: Administrador',
-                    style: TextStyle(color: Color(0xFF00897B), fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Módulos de Administración',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-
-            _buildCard(
-              context,
-              icon: Icons.check_circle_outline,
-              color: Colors.green,
-              title: 'Aprobar Solicitudes',
-              descripcion: 'Revisar y aprobar solicitudes de vacaciones',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AprobarSolicitudesV()),
-              ),
-            ),
-            _buildCard(
-              context,
-              icon: Icons.manage_accounts_outlined,
-              color: Colors.blue,
-              title: 'Asignación de Roles',
-              descripcion: 'Gestionar roles de los trabajadores',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AsignacionRoles()),
-              ),
-            ),
-            _buildCard(
-              context,
-              icon: Icons.calculate_outlined,
-              color: Colors.teal,
-              title: 'Cálculo Horas Extra',
-              descripcion: 'Registrar y calcular horas extras al 50%',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CalculoHextra()),
-              ),
-            ),
-            _buildCard(
-              context,
-              icon: Icons.upload_file_outlined,
-              color: Colors.indigo,
-              title: 'Carga de Archivos',
-              descripcion: 'Importar liquidaciones masivamente',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const CargaMasivaArchivosPage(),
-                ),
-              ),
-            ),
-            _buildCard(
-              context,
-              icon: Icons.attach_money,
-              color: Colors.orange,
-              title: 'Registro de Bonos',
-              descripcion: 'Registrar bonos imponibles del personal',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RegistrarBonos()),
-              ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              tooltip: 'Cerrar sesión',
+              onPressed: () => _cerrarSesion(context),
             ),
           ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tarjeta bienvenida
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF001E42),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bienvenido/a, $nombreCompleto',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      cargo,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Rol: Administrador',
+                      style: TextStyle(color: Color(0xFF00897B), fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Módulos de Administración',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              _buildCard(
+                context,
+                icon: Icons.check_circle_outline,
+                color: Colors.green,
+                title: 'Aprobar Solicitudes',
+                descripcion: 'Revisar y aprobar solicitudes de vacaciones',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AprobarSolicitudesV(),
+                  ),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.manage_accounts_outlined,
+                color: Colors.blue,
+                title: 'Asignación de Roles',
+                descripcion: 'Gestionar roles de los trabajadores',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AsignacionRoles()),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.calculate_outlined,
+                color: Colors.teal,
+                title: 'Cálculo Horas Extra',
+                descripcion: 'Registrar y calcular horas extras al 50%',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CalculoHextra()),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.upload_file_outlined,
+                color: Colors.indigo,
+                title: 'Carga de Archivos',
+                descripcion: 'Importar liquidaciones masivamente',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CargaMasivaArchivosPage(),
+                  ),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.attach_money,
+                color: Colors.orange,
+                title: 'Registro de Bonos',
+                descripcion: 'Registrar bonos imponibles del personal',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegistrarBonos()),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.person_outline,
+                color: Colors.teal,
+                title: 'Mi Ficha Personal',
+                descripcion: 'Ver y actualizar mis datos personales',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FichaUsuario()),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -213,103 +235,128 @@ class UsuarioDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF009A8D),
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Mi Portal',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            tooltip: 'Cerrar sesión',
-            onPressed: () => _cerrarSesion(context),
+    return AuthGuard(
+      rolRequerido: 'usuario',
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F7FB),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF009A8D),
+          automaticallyImplyLeading: false,
+          title: const Text(
+            'Mi Portal',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Tarjeta bienvenida
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF009A8D),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Hola, $nombreCompleto',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    cargo,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Rol: Trabajador',
-                    style: TextStyle(color: Colors.white60, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Mis Módulos',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-
-            _buildCard(
-              context,
-              icon: Icons.calendar_today_outlined,
-              color: Colors.blue,
-              title: 'Solicitud de Vacaciones',
-              descripcion: 'Solicitar y revisar mis vacaciones',
-              onTap: () => Navigator.push(
+          actions: [
+            TextButton.icon(
+              onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SolicitudVacaciones()),
+                MaterialPageRoute(builder: (_) => const FichaUsuario()),
+              ),
+              icon: const Icon(
+                Icons.person_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+              label: const Text(
+                'Mi Ficha',
+                style: TextStyle(color: Colors.white, fontSize: 13),
               ),
             ),
-            _buildCard(
-              context,
-              icon: Icons.download_outlined,
-              color: Colors.red,
-              title: 'Mis Liquidaciones',
-              descripcion: 'Descargar mis liquidaciones de sueldo',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DescargaLiquidacion()),
-              ),
-            ),
-            _buildCard(
-              context,
-              icon: Icons.trending_up,
-              color: Colors.purple,
-              title: 'Vacaciones Progresivas',
-              descripcion: 'Ver mis días de vacaciones según antigüedad',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const VacacionesProgresivas(),
-                ),
-              ),
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              tooltip: 'Cerrar sesión',
+              onPressed: () => _cerrarSesion(context),
             ),
           ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tarjeta bienvenida
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF009A8D),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hola, $nombreCompleto',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      cargo,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Rol: Trabajador',
+                      style: TextStyle(color: Colors.white60, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Mis Módulos',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              _buildCard(
+                context,
+                icon: Icons.calendar_today_outlined,
+                color: Colors.blue,
+                title: 'Solicitud de Vacaciones',
+                descripcion: 'Solicitar y revisar mis vacaciones',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SolicitudVacaciones(),
+                  ),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.download_outlined,
+                color: Colors.red,
+                title: 'Mis Liquidaciones',
+                descripcion: 'Descargar mis liquidaciones de sueldo',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DescargaLiquidacion(),
+                  ),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.trending_up,
+                color: Colors.purple,
+                title: 'Vacaciones Progresivas',
+                descripcion: 'Ver mis días de vacaciones según antigüedad',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const VacacionesProgresivas(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
