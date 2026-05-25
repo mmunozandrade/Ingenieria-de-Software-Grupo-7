@@ -1,12 +1,17 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../auth/inicial.dart';
+import '../../auth/session_service.dart';
 import 'registroBonos.dart';
 import '../USUARIO/solicitudVacaciones.dart';
 import 'asignacionRoles.dart';
 import 'calculoHextra.dart';
 import '../USUARIO/descargaLiquidacion.dart';
+
+const String _apiUrl = 'http://127.0.0.1:8000';
 
 class CargaMasivaArchivosPage extends StatefulWidget {
   const CargaMasivaArchivosPage({super.key});
@@ -17,25 +22,37 @@ class CargaMasivaArchivosPage extends StatefulWidget {
 }
 
 class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
-  String? nombreArchivo;
-  Uint8List? archivoBytes;
+  String? _nombreArchivo;
+  Uint8List? _archivoBytes;
+  bool _subiendo = false;
 
-  Future<void> seleccionarArchivoZip() async {
+  // Resultado del proceso
+  int? _procesados;
+  int? _errores;
+  List<String> _detalleProcessados = [];
+  List<String> _detalleErrores = [];
+  bool? _exito;
+  String _mensaje = '';
+
+  // ── Seleccionar archivo ZIP ───────────────────────────────
+  Future<void> _seleccionarArchivoZip() async {
     final resultado = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['zip'],
       withData: true,
     );
-
-    if (resultado == null) {
-      return;
-    }
+    if (resultado == null) return;
 
     final archivo = resultado.files.single;
-
     setState(() {
-      nombreArchivo = archivo.name;
-      archivoBytes = archivo.bytes;
+      _nombreArchivo = archivo.name;
+      _archivoBytes = archivo.bytes;
+      _procesados = null;
+      _errores = null;
+      _detalleProcessados = [];
+      _detalleErrores = [];
+      _exito = null;
+      _mensaje = '';
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -46,8 +63,9 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
     );
   }
 
-  void cargarArchivo() {
-    if (nombreArchivo == null || archivoBytes == null) {
+  // ── Subir ZIP al backend ──────────────────────────────────
+  Future<void> _subirArchivo() async {
+    if (_nombreArchivo == null || _archivoBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Primero debes seleccionar un archivo .zip'),
@@ -56,13 +74,53 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
       );
       return;
     }
-    // Aquí después puedes conectar con backend o procesar el archivo.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Cargando archivo: $nombreArchivo'),
-        backgroundColor: const Color(0xFF0F9F8F),
-      ),
-    );
+
+    setState(() {
+      _subiendo = true;
+      _procesados = null;
+      _errores = null;
+      _exito = null;
+      _mensaje = '';
+    });
+
+    try {
+      final token = await SessionService.obtenerToken();
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_apiUrl/subir-liquidaciones'),
+      );
+      request.headers['Authorization'] = 'Bearer $token';
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'archivo',
+          _archivoBytes!,
+          filename: _nombreArchivo!,
+        ),
+      );
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+      final data = jsonDecode(response.body);
+
+      setState(() {
+        _exito = data['success'] == true;
+        _mensaje = data['mensaje'] ?? '';
+        _procesados = data['procesados'] ?? 0;
+        _errores = data['errores'] ?? 0;
+        _detalleProcessados = List<String>.from(
+          data['detalle_procesados'] ?? [],
+        );
+        _detalleErrores = List<String>.from(data['detalle_errores'] ?? []);
+      });
+    } catch (e) {
+      setState(() {
+        _exito = false;
+        _mensaje = 'No se pudo conectar al servidor';
+      });
+    } finally {
+      setState(() => _subiendo = false);
+    }
   }
 
   @override
@@ -74,7 +132,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          "Clínica Aconcagua",
+          'Clinica Aconcagua',
           style: TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -93,7 +151,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
-                    'Menú Principal',
+                    'Menu Principal',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -102,7 +160,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Gestión Administrativa',
+                    'Gestion Administrativa',
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
@@ -111,94 +169,67 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
             ListTile(
               leading: const Icon(Icons.home_outlined),
               title: const Text('Inicio'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DashboardScreen(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              ),
             ),
-            // --- SECCIÓN: MI PORTAL (USUARIO) ---
             ListTile(
               leading: const Icon(Icons.calendar_today_outlined),
               title: const Text('Solicitud de Vacaciones'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SolicitudVacaciones(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const SolicitudVacaciones()),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.receipt_long_outlined),
               title: const Text('Mis Liquidaciones'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DescargaLiquidacion(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const DescargaLiquidacion()),
+              ),
             ),
             const Divider(),
-            // --- SECCIÓN: ADMINISTRACIÓN ---
             ListTile(
               leading: const Icon(Icons.attach_money_outlined),
               title: const Text('Registro de Bonos'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RegistrarBonos(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const RegistrarBonos()),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.calculate_outlined),
-              title: const Text('Cálculo de Horas Extra'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CalculoHextra(),
-                  ),
-                );
-              },
+              title: const Text('Calculo de Horas Extra'),
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const CalculoHextra()),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.manage_accounts_outlined),
-              title: const Text('Asignación de Roles'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AsignacionRoles(),
-                  ),
-                );
-              },
+              title: const Text('Asignacion de Roles'),
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const AsignacionRoles()),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.upload_file_outlined),
               title: const Text('Carga de Archivos'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CargaMasivaArchivosPage(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CargaMasivaArchivosPage(),
+                ),
+              ),
             ),
+            const Divider(),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text(
-                'Cerrar Sesión',
+                'Cerrar Sesion',
                 style: TextStyle(color: Colors.red),
               ),
               onTap: () {},
@@ -207,9 +238,6 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
         ),
       ),
 
-      // ==========================================
-      // AQUÍ ESTÁ LA SOLUCIÓN: AGREGAMOS EL BODY
-      // ==========================================
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Center(
@@ -218,8 +246,9 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Titulo
                 const Text(
-                  "Carga Masiva de Archivos",
+                  'Carga Masiva de Archivos',
                   style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
@@ -228,29 +257,41 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  "Sube un archivo comprimido (.zip) con las liquidaciones de sueldo de los trabajadores.",
+                  'Sube un archivo comprimido (.zip) con las liquidaciones de sueldo de los trabajadores.',
                   style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 32),
-                // Llamamos a tu tarjeta de requisitos
+
+                // Requisitos
                 const _RequisitosArchivoCard(),
                 const SizedBox(height: 32),
-                // Llamamos a tu zona de carga de archivos
+
+                // Zona de carga
                 _ZonaCargaArchivo(
-                  nombreArchivo: nombreArchivo,
-                  onSeleccionar: seleccionarArchivoZip,
+                  nombreArchivo: _nombreArchivo,
+                  onSeleccionar: _seleccionarArchivoZip,
                 ),
                 const SizedBox(height: 32),
-                // Botón para subir
+
+                // Boton subir
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: cargarArchivo,
-                    icon: const Icon(Icons.cloud_upload),
-                    label: const Text(
-                      'Subir Archivo al Sistema',
-                      style: TextStyle(
+                    onPressed: _subiendo ? null : _subirArchivo,
+                    icon: _subiendo
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Icon(Icons.cloud_upload),
+                    label: Text(
+                      _subiendo ? 'Procesando...' : 'Subir Archivo al Sistema',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -265,6 +306,18 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // Resultado
+                if (_exito != null)
+                  _ResultadoCarga(
+                    exito: _exito!,
+                    mensaje: _mensaje,
+                    procesados: _procesados ?? 0,
+                    errores: _errores ?? 0,
+                    detalleProcessados: _detalleProcessados,
+                    detalleErrores: _detalleErrores,
+                  ),
               ],
             ),
           ),
@@ -274,6 +327,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
   }
 }
 
+// ── Tarjeta de requisitos ─────────────────────────────────────
 class _RequisitosArchivoCard extends StatelessWidget {
   const _RequisitosArchivoCard();
 
@@ -306,12 +360,12 @@ class _RequisitosArchivoCard extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 _BulletText(texto: 'Formato: Archivo .zip'),
-                _BulletText(texto: 'Máximo: 50 liquidaciones'),
+                _BulletText(texto: 'Maximo: 50 liquidaciones'),
                 _BulletTextConEtiqueta(
                   texto: 'Nomenclatura: ',
                   etiqueta: 'RUT-AAAAMM.pdf',
                 ),
-                _BulletText(texto: 'Tamaño máximo por PDF: 5 MB'),
+                _BulletText(texto: 'Tamano maximo por PDF: 5 MB'),
                 _BulletText(texto: 'Ejemplo: 12345678-9-202604.pdf'),
               ],
             ),
@@ -322,9 +376,282 @@ class _RequisitosArchivoCard extends StatelessWidget {
   }
 }
 
+// ── Zona de carga ─────────────────────────────────────────────
+class _ZonaCargaArchivo extends StatelessWidget {
+  final String? nombreArchivo;
+  final VoidCallback onSeleccionar;
+
+  const _ZonaCargaArchivo({
+    required this.nombreArchivo,
+    required this.onSeleccionar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool seleccionado = nombreArchivo != null;
+    return InkWell(
+      onTap: onSeleccionar,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: double.infinity,
+        height: 260,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFAFA),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: seleccionado
+                ? const Color(0xFF0F9F8F)
+                : const Color(0xFFCBD5E1),
+            width: seleccionado ? 1.8 : 1.4,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 70,
+                height: 70,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFCCFBF1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  seleccionado
+                      ? Icons.check_circle_outline
+                      : Icons.cloud_upload_outlined,
+                  size: 38,
+                  color: const Color(0xFF0F9F8F),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                seleccionado
+                    ? 'Archivo seleccionado'
+                    : 'Arrastra tu archivo .zip aqui',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                seleccionado ? nombreArchivo! : 'o haz clic para seleccionar',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: seleccionado
+                      ? const Color(0xFF0F766E)
+                      : const Color(0xFF475569),
+                  fontWeight: seleccionado
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: onSeleccionar,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F9F8F),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  seleccionado ? 'Cambiar Archivo' : 'Seleccionar Archivo',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Resultado de la carga ─────────────────────────────────────
+class _ResultadoCarga extends StatelessWidget {
+  final bool exito;
+  final String mensaje;
+  final int procesados;
+  final int errores;
+  final List<String> detalleProcessados;
+  final List<String> detalleErrores;
+
+  const _ResultadoCarga({
+    required this.exito,
+    required this.mensaje,
+    required this.procesados,
+    required this.errores,
+    required this.detalleProcessados,
+    required this.detalleErrores,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Banner principal
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: exito ? Colors.green[50] : Colors.red[50],
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: exito ? Colors.green[200]! : Colors.red[200]!,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                exito ? Icons.check_circle_outline : Icons.error_outline,
+                color: exito ? Colors.green : Colors.red,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  mensaje,
+                  style: TextStyle(
+                    color: exito ? Colors.green[800] : Colors.red[800],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Contadores
+        Row(
+          children: [
+            _ContadorChip(
+              label: 'Procesados',
+              valor: procesados,
+              color: Colors.green,
+            ),
+            const SizedBox(width: 12),
+            _ContadorChip(
+              label: 'Con error',
+              valor: errores,
+              color: errores > 0 ? Colors.red : Colors.grey,
+            ),
+          ],
+        ),
+
+        // Detalle errores
+        if (detalleErrores.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text(
+            'Archivos con error:',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          ...detalleErrores.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.close, color: Colors.red, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      e,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+
+        // Detalle procesados
+        if (detalleProcessados.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text(
+            'Archivos procesados:',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          ...detalleProcessados.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.check, color: Colors.green, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    e,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ContadorChip extends StatelessWidget {
+  final String label;
+  final int valor;
+  final Color color;
+
+  const _ContadorChip({
+    required this.label,
+    required this.valor,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            '$valor',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: color.withOpacity(0.8)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Bullet helpers ────────────────────────────────────────────
 class _BulletText extends StatelessWidget {
   final String texto;
-
   const _BulletText({required this.texto});
 
   @override
@@ -357,7 +684,6 @@ class _BulletText extends StatelessWidget {
 class _BulletTextConEtiqueta extends StatelessWidget {
   final String texto;
   final String etiqueta;
-
   const _BulletTextConEtiqueta({required this.texto, required this.etiqueta});
 
   @override
@@ -394,115 +720,6 @@ class _BulletTextConEtiqueta extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ZonaCargaArchivo extends StatelessWidget {
-  final String? nombreArchivo;
-  final VoidCallback onSeleccionar;
-
-  const _ZonaCargaArchivo({
-    required this.nombreArchivo,
-    required this.onSeleccionar,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bool archivoSeleccionado = nombreArchivo != null;
-
-    return InkWell(
-      onTap: onSeleccionar,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        width: double.infinity,
-        height: 300,
-        decoration: BoxDecoration(
-          color: const Color(0xFFFAFAFA),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: archivoSeleccionado
-                ? const Color(0xFF0F9F8F)
-                : const Color(0xFFCBD5E1),
-            width: archivoSeleccionado ? 1.8 : 1.4,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 78,
-                height: 78,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFCCFBF1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  archivoSeleccionado
-                      ? Icons.check_circle_outline
-                      : Icons.cloud_upload_outlined,
-                  size: 42,
-                  color: const Color(0xFF0F9F8F),
-                ),
-              ),
-              const SizedBox(height: 22),
-              Text(
-                archivoSeleccionado
-                    ? 'Archivo seleccionado'
-                    : 'Arrastra tu archivo .zip aquí',
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                archivoSeleccionado
-                    ? nombreArchivo!
-                    : 'o haz clic para seleccionar',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: archivoSeleccionado
-                      ? const Color(0xFF0F766E)
-                      : const Color(0xFF475569),
-                  fontWeight: archivoSeleccionado
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                height: 42,
-                child: ElevatedButton(
-                  onPressed: onSeleccionar,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F9F8F),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 28),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    archivoSeleccionado
-                        ? 'Cambiar Archivo'
-                        : 'Seleccionar Archivo',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
