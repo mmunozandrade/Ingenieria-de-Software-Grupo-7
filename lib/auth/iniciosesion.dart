@@ -12,6 +12,8 @@ import '../screens/ADMIN/asignacionRoles.dart';
 import '../screens/ADMIN/calculoHextra.dart';
 import '../screens/ADMIN/cargaArchivos.dart';
 import '../screens/ADMIN/registroBonos.dart';
+import '../screens/ADMIN/registroEmpleado.dart';
+import '../screens/ADMIN/busquedaEmpleados.dart';
 
 // Pantallas USUARIO
 import '../screens/USUARIO/descargaLiquidacion.dart';
@@ -170,6 +172,25 @@ class AdminDashboard extends StatelessWidget {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const FichaUsuario()),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.person_add_outlined,
+                color: Colors.green,
+                title: 'Registrar Empleado',
+                descripcion: 'Agregar o editar trabajadores del sistema',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const RegistroEmpleado())
+                ),
+              ),
+              _buildCard(context,
+                icon: Icons.manage_search_outlined,
+                color: Colors.deepPurple,
+                title: 'Buscar Empleados',
+                descripcion: 'Buscar trabajadores por apellido o RUT',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const BusquedaEmpleados())
                 ),
               ),
             ],
