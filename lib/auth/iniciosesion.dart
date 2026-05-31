@@ -14,7 +14,9 @@ import '../screens/ADMIN/cargaArchivos.dart';
 import '../screens/ADMIN/registroBonos.dart';
 import '../screens/ADMIN/registroEmpleado.dart';
 import '../screens/ADMIN/busquedaEmpleados.dart';
-
+//Pantalla JEFE
+import '../screens/JEFE/panelResumenJefe.dart';
+import '../screens/JEFE/vacacionesAreaJefe.dart';
 // Pantallas USUARIO
 import '../screens/USUARIO/descargaLiquidacion.dart';
 import '../screens/USUARIO/solicitudVacaciones.dart';
@@ -423,7 +425,177 @@ class UsuarioDashboard extends StatelessWidget {
     );
   }
 }
+// ============================================================
+// DASHBOARD JEFE
+// ============================================================
+class JefeDashboard extends StatelessWidget {
+  final String nombreCompleto;
+  final String cargo;
 
+  const JefeDashboard({
+    super.key,
+    required this.nombreCompleto,
+    required this.cargo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthGuard(
+      rolRequerido: 'jefe',
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F7FB),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF1D4ED8),
+          automaticallyImplyLeading: false,
+          title: const Text(
+            'Portal Jefe',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const FichaUsuario())),
+              icon: const Icon(Icons.person_outline, color: Colors.white, size: 20),
+              label: const Text('Mi Ficha',
+                  style: TextStyle(color: Colors.white, fontSize: 13)),
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              tooltip: 'Cerrar sesion',
+              onPressed: () => _cerrarSesion(context),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tarjeta bienvenida
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1D4ED8),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Bienvenido/a, $nombreCompleto',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(cargo,
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 14)),
+                    const SizedBox(height: 4),
+                    const Text('Rol: Jefe de Area',
+                        style: TextStyle(
+                            color: Color(0xFF93C5FD), fontSize: 13)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Modulos exclusivos del jefe
+              const Text('Modulos de Supervision',
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+
+              _buildCard(context,
+                icon: Icons.dashboard_outlined,
+                color: const Color(0xFF1D4ED8),
+                title: 'Panel Resumen del Area',
+                descripcion: 'Ver equipo, solicitudes y contratos por vencer',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const PanelResumenJefe())),
+              ),
+              _buildCard(context,
+                icon: Icons.calendar_month_outlined,
+                color: const Color(0xFF0D9488),
+                title: 'Vacaciones del Area',
+                descripcion: 'Ver saldos e historial de solicitudes',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const VacacionesAreaJefe())),
+              ),
+
+              const SizedBox(height: 24),
+              const Text('Mis Modulos',
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+
+              // Mismos modulos que usuario
+              _buildCard(context,
+                icon: Icons.calendar_today_outlined,
+                color: Colors.blue,
+                title: 'Solicitud de Vacaciones',
+                descripcion: 'Solicitar y revisar mis vacaciones',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SolicitudVacaciones())),
+              ),
+              _buildCard(context,
+                icon: Icons.download_outlined,
+                color: Colors.red,
+                title: 'Mis Liquidaciones',
+                descripcion: 'Descargar mis liquidaciones de sueldo',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const DescargaLiquidacion())),
+              ),
+              _buildCard(context,
+                icon: Icons.trending_up,
+                color: Colors.purple,
+                title: 'Vacaciones Progresivas',
+                descripcion: 'Ver mis dias de vacaciones segun antiguedad',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const VacacionesProgresivas())),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String descripcion,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: CircleAvatar(
+          backgroundColor: color.withOpacity(0.1),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        subtitle: Text(descripcion,
+            style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        onTap: onTap,
+      ),
+    );
+  }
+
+  void _cerrarSesion(BuildContext context) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const IniciarSesionPage()),
+      (route) => false,
+    );
+  }
+}
 // ============================================================
 // PANTALLA LOGIN
 // ============================================================
@@ -497,7 +669,7 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
                   AdminDashboard(nombreCompleto: nombreCompleto, cargo: cargo),
             ),
           );
-        } else if (rol == 'usuario') {
+        } else if (rol == 'usuario') { ////////////Roles de usuairo
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -507,7 +679,18 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
               ),
             ),
           );
+        } else if (rol == 'jefe') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => JefeDashboard(
+                nombreCompleto: nombreCompleto,
+                cargo: cargo,
+              ),
+            ),
+          );
         }
+        
       } else {
         setState(() => _error = data['mensaje'] ?? 'Credenciales incorrectas.');
       }

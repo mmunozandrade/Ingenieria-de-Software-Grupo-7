@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../auth/session_service.dart';
+import 'fichaEmpleadoAdmin.dart';
 
 const String _apiUrlBusq = 'http://127.0.0.1:8000';
 
@@ -82,6 +83,18 @@ class _BusquedaEmpleadosState extends State<BusquedaEmpleados> {
     }
   }
 
+  void _abrirFicha(Map<String, dynamic> empleado) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FichaEmpleadoAdmin(empleado: empleado),
+      ),
+    ).then((_) {
+      // Refrescar busqueda al volver
+      if (_buscado) _buscar();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,8 +115,7 @@ class _BusquedaEmpleadosState extends State<BusquedaEmpleados> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
-                // Titulo
+                
                 const Text('Buscar Empleados',
                     style: TextStyle(
                         fontSize: 26,
@@ -158,7 +170,7 @@ class _BusquedaEmpleadosState extends State<BusquedaEmpleados> {
                 ),
                 const SizedBox(height: 12),
 
-                // Campo de busqueda
+                // Campo busqueda
                 Row(children: [
                   Expanded(
                     child: TextField(
@@ -274,11 +286,15 @@ class _BusquedaEmpleadosState extends State<BusquedaEmpleados> {
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF475569)),
                       ),
+                      const Text(
+                        'Haz clic en un empleado para ver su ficha',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
 
-                  // Encabezado tabla
+                  // Encabezado
                   Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFF001E42),
@@ -287,120 +303,101 @@ class _BusquedaEmpleadosState extends State<BusquedaEmpleados> {
                     child: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Row(children: [
-                        Expanded(
-                            flex: 3,
+                        Expanded(flex: 3,
                             child: Text('Nombre Completo',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13))),
-                        Expanded(
-                            flex: 2,
+                                style: TextStyle(color: Colors.white,
+                                    fontWeight: FontWeight.bold, fontSize: 13))),
+                        Expanded(flex: 2,
                             child: Text('RUT',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13))),
-                        Expanded(
-                            flex: 2,
+                                style: TextStyle(color: Colors.white,
+                                    fontWeight: FontWeight.bold, fontSize: 13))),
+                        Expanded(flex: 2,
                             child: Text('Cargo',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13))),
-                        Expanded(
-                            flex: 2,
+                                style: TextStyle(color: Colors.white,
+                                    fontWeight: FontWeight.bold, fontSize: 13))),
+                        Expanded(flex: 2,
                             child: Text('Fecha Ingreso',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13))),
+                                style: TextStyle(color: Colors.white,
+                                    fontWeight: FontWeight.bold, fontSize: 13))),
+                        SizedBox(width: 32),
                       ]),
                     ),
                   ),
                   const SizedBox(height: 4),
 
-                  // Filas
+                  // Filas clickeables
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _resultados.length,
                     itemBuilder: (context, index) {
-                      final e = _resultados[index];
+                      final e    = _resultados[index];
                       final bool esPar = index % 2 == 0;
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 4),
-                        decoration: BoxDecoration(
-                          color: esPar ? Colors.white : const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 14),
-                          child: Row(children: [
-                            // Nombre
-                            Expanded(
-                              flex: 3,
-                              child: Row(children: [
-                                CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor:
-                                      const Color(0xFF001E42).withOpacity(0.1),
-                                  child: Text(
-                                    (e['nombres'] ?? '?')[0].toUpperCase(),
-                                    style: const TextStyle(
-                                        color: Color(0xFF001E42),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14),
+                      return InkWell(
+                        onTap: () => _abrirFicha(e),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          decoration: BoxDecoration(
+                            color: esPar ? Colors.white : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            child: Row(children: [
+                              // Nombre
+                              Expanded(
+                                flex: 3,
+                                child: Row(children: [
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor:
+                                        const Color(0xFF001E42).withOpacity(0.1),
+                                    child: Text(
+                                      (e['nombres'] ?? '?')[0].toUpperCase(),
+                                      style: const TextStyle(
+                                          color: Color(0xFF001E42),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    '${e['nombres'] ?? ''} ${e['apellidos'] ?? ''}',
-                                    style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF0F172A)),
-                                    overflow: TextOverflow.ellipsis,
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      '${e['nombres'] ?? ''} ${e['apellidos'] ?? ''}',
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF0F172A)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                              ]),
-                            ),
-
-                            // RUT
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                e['rut'] ?? '—',
-                                style: const TextStyle(
-                                    fontSize: 13, color: Color(0xFF475569)),
+                                ]),
                               ),
-                            ),
-
-                            // Cargo
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                e['cargo'] ?? '—',
-                                style: const TextStyle(
-                                    fontSize: 13, color: Color(0xFF475569)),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-
-                            // Fecha ingreso
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                e['fecha_ingreso'] ?? '—',
-                                style: const TextStyle(
-                                    fontSize: 13, color: Color(0xFF475569)),
-                              ),
-                            ),
-                          ]),
+                              // RUT
+                              Expanded(flex: 2,
+                                child: Text(e['rut'] ?? '—',
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Color(0xFF475569)))),
+                              // Cargo
+                              Expanded(flex: 2,
+                                child: Text(e['cargo'] ?? '—',
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Color(0xFF475569)),
+                                    overflow: TextOverflow.ellipsis)),
+                              // Fecha ingreso
+                              Expanded(flex: 2,
+                                child: Text(e['fecha_ingreso'] ?? '—',
+                                    style: const TextStyle(
+                                        fontSize: 13, color: Color(0xFF475569)))),
+                              // Icono
+                              const Icon(Icons.chevron_right,
+                                  color: Color(0xFF94A3B8)),
+                            ]),
+                          ),
                         ),
                       );
                     },
