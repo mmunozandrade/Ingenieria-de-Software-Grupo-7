@@ -21,7 +21,7 @@ import '../screens/JEFE/vacacionesAreaJefe.dart';
 import '../screens/USUARIO/descargaLiquidacion.dart';
 import '../screens/USUARIO/solicitudVacaciones.dart';
 import '../screens/USUARIO/vacacionesProgresivas.dart';
-
+import '../screens/USUARIO/historialVacaciones.dart';
 // URL de la API
 const String apiUrl = 'http://127.0.0.1:8000';
 
@@ -378,6 +378,16 @@ class UsuarioDashboard extends StatelessWidget {
                   ),
                 ),
               ),
+              _buildCard(context,
+                icon: Icons.history_outlined,
+                color: Colors.indigo,
+                title: 'Historial de Vacaciones',
+                descripcion: 'Ver todas mis solicitudes de vacaciones',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HistorialVacaciones())
+                ),
+              ),
             ],
           ),
         ),
@@ -553,6 +563,14 @@ class JefeDashboard extends StatelessWidget {
                 descripcion: 'Ver mis dias de vacaciones segun antiguedad',
                 onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const VacacionesProgresivas())),
+              ),
+              _buildCard(context,
+                icon: Icons.history_outlined,
+                color: Colors.indigo,
+                title: 'Historial de Vacaciones',
+                descripcion: 'Ver todas mis solicitudes de vacaciones',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const HistorialVacaciones())),
               ),
             ],
           ),

@@ -1,10 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../auth/inicial.dart';
-import 'cargaArchivos.dart';
-import '../USUARIO/solicitudVacaciones.dart';
-import 'asignacionRoles.dart';
-import 'calculoHextra.dart';
-import '../USUARIO/descargaLiquidacion.dart';
 
 class RegistrarBonos extends StatefulWidget {
   const RegistrarBonos({super.key});
@@ -23,7 +17,7 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          "Clínica Aconcagua",
+          'Registro de Bonos Imponibles',
           style: TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -31,132 +25,7 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
           ),
         ),
       ),
-      // 2. MENÚ LATERAL DESPLEGABLE
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFF001E42)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    'Menú de Gestión',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Sistema de Remuneraciones',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home_outlined),
-              title: const Text('Inicio'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DashboardScreen(),
-                  ),
-                );
-              },
-            ),
-            // --- SECCIÓN: MI PORTAL (USUARIO) ---
-            ListTile(
-              leading: const Icon(Icons.calendar_today_outlined),
-              title: const Text('Solicitud de Vacaciones'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SolicitudVacaciones(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long_outlined),
-              title: const Text('Mis Liquidaciones'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DescargaLiquidacion(),
-                  ),
-                );
-              },
-            ),
-            const Divider(),
-            // --- SECCIÓN: ADMINISTRACIÓN ---
-            ListTile(
-              leading: const Icon(Icons.attach_money_outlined),
-              title: const Text('Registro de Bonos'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RegistrarBonos(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.calculate_outlined),
-              title: const Text('Cálculo de Horas Extra'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CalculoHextra(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.manage_accounts_outlined),
-              title: const Text('Asignación de Roles'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AsignacionRoles(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.upload_file_outlined),
-              title: const Text('Carga de Archivos'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  // Asumo que tu clase se llama CargaMasivaArchivosPage como lo mostraste antes
-                  MaterialPageRoute(
-                    builder: (context) => const CargaMasivaArchivosPage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Cerrar Sesión',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () {},
-            ),
-          ],
-        ),
-      ),
+      
       // 3. CONTENIDO PRINCIPAL (Tu código original)
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
