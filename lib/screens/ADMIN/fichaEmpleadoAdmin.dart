@@ -18,6 +18,9 @@ const List<String> _afpListAdmin = [
   'AFP Uno',
 ];
 
+// Lista cerrada de roles asignables
+const List<String> _rolesDisponibles = ['usuario', 'jefe'];
+
 class FichaEmpleadoAdmin extends StatefulWidget {
   final Map<String, dynamic> empleado;
   const FichaEmpleadoAdmin({super.key, required this.empleado});
@@ -29,19 +32,23 @@ class FichaEmpleadoAdmin extends StatefulWidget {
 class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
   final _mesesCtrl = TextEditingController();
   String? _afpSeleccionada;
+  String? _rolSeleccionado;
 
   // Certificado PDF
   String?    _nombreCertificado;
   Uint8List? _certificadoBytes;
 
-  bool   _guardando = false;
-  String _mensaje   = '';
-  bool   _exito     = false;
+  bool   _guardando     = false;
+  bool   _guardandoRol  = false;
+  String _mensaje       = '';
+  bool   _exito         = false;
+  String _mensajeRol    = '';
+  bool   _exitoRol      = false;
 
   // Datos calculados
-  int _mesesClinica       = 0;
-  int _totalMeses         = 0;
-  bool _cumpleProgresivos = false;
+  int  _mesesClinica       = 0;
+  int  _totalMeses         = 0;
+  bool _cumpleProgresivos  = false;
 
   @override
   void initState() {
@@ -49,10 +56,12 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     final previos = widget.empleado['meses_cotizados_previos'] ?? 0;
     _mesesCtrl.text = previos.toString();
     _afpSeleccionada = widget.empleado['afp'];
-    // Si la AFP guardada no esta en la lista la dejamos null
     if (_afpSeleccionada != null && !_afpListAdmin.contains(_afpSeleccionada)) {
       _afpSeleccionada = null;
     }
+    // Rol actual del empleado
+    final rolActual = widget.empleado['rol'] ?? 'usuario';
+    _rolSeleccionado = _rolesDisponibles.contains(rolActual) ? rolActual : 'usuario';
     _calcularMeses();
   }
 
@@ -66,7 +75,6 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     final fechaIngresoStr = widget.empleado['fecha_ingreso'];
     if (fechaIngresoStr != null) {
       try {
-        // fecha_ingreso viene como dd/mm/yyyy desde la BD
         final partes = fechaIngresoStr.split('/');
         DateTime fechaIngreso;
         if (partes.length == 3) {
@@ -87,10 +95,9 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
         _mesesClinica = 0;
       }
     }
-
-    final previos = int.tryParse(_mesesCtrl.text) ?? 0;
+    final previos  = int.tryParse(_mesesCtrl.text) ?? 0;
     final limitados = previos.clamp(0, 120);
-    _totalMeses = limitados + _mesesClinica;
+    _totalMeses        = limitados + _mesesClinica;
     _cumpleProgresivos = _totalMeses >= 120;
   }
 
@@ -110,36 +117,27 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       ));
       return;
     }
-
     setState(() {
       _nombreCertificado = archivo.name;
       _certificadoBytes  = archivo.bytes;
     });
   }
 
+  // ── Guardar AFP y cotizaciones ────────────────────────────
   Future<void> _guardar() async {
     final meses = int.tryParse(_mesesCtrl.text.trim());
     if (meses == null || meses < 0 || meses > 600) {
-      setState(() {
-        _exito   = false;
-        _mensaje = 'Los meses deben ser un numero entre 0 y 600';
-      });
+      setState(() { _exito = false; _mensaje = 'Los meses deben ser un numero entre 0 y 600'; });
       return;
     }
     if (_afpSeleccionada == null) {
-      setState(() {
-        _exito   = false;
-        _mensaje = 'Debes seleccionar la AFP del trabajador';
-      });
+      setState(() { _exito = false; _mensaje = 'Debes seleccionar la AFP del trabajador'; });
       return;
     }
     if (_certificadoBytes == null &&
         (widget.empleado['meses_cotizados_previos'] ?? 0) == 0 &&
         meses > 0) {
-      setState(() {
-        _exito   = false;
-        _mensaje = 'Debes adjuntar el certificado AFP para registrar meses previos';
-      });
+      setState(() { _exito = false; _mensaje = 'Debes adjuntar el certificado AFP para registrar meses previos'; });
       return;
     }
 
@@ -149,7 +147,6 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       final token   = await SessionService.obtenerToken();
       final idEmple = widget.empleado['id_empleado'];
 
-      // Si hay certificado PDF, subirlo primero
       if (_certificadoBytes != null) {
         final reqPdf = http.MultipartRequest(
           'POST',
@@ -164,7 +161,6 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
         await reqPdf.send();
       }
 
-      // Actualizar meses y AFP
       final response = await http.put(
         Uri.parse('$_apiUrlFichaAdmin/empleados/$idEmple/cotizaciones'),
         headers: {
@@ -180,19 +176,50 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       final data = jsonDecode(response.body);
       setState(() {
         _exito   = data['success'] == true;
-        _mensaje = _exito
-            ? 'Datos actualizados correctamente'
-            : data['mensaje'] ?? 'Error al guardar';
+        _mensaje = _exito ? 'Datos actualizados correctamente' : data['mensaje'] ?? 'Error al guardar';
       });
 
       if (_exito) _calcularMeses();
     } catch (e) {
-      setState(() {
-        _exito   = false;
-        _mensaje = 'No se pudo conectar al servidor';
-      });
+      setState(() { _exito = false; _mensaje = 'No se pudo conectar al servidor'; });
     } finally {
       setState(() => _guardando = false);
+    }
+  }
+
+  // ── Guardar Rol ───────────────────────────────────────────
+  Future<void> _guardarRol() async {
+    if (_rolSeleccionado == null) {
+      setState(() { _exitoRol = false; _mensajeRol = 'Debes seleccionar un rol'; });
+      return;
+    }
+
+    setState(() { _guardandoRol = true; _mensajeRol = ''; });
+
+    try {
+      final token   = await SessionService.obtenerToken();
+      final idEmple = widget.empleado['id_empleado'];
+
+      final response = await http.put(
+        Uri.parse('$_apiUrlFichaAdmin/empleados/$idEmple/rol'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'rol': _rolSeleccionado}),
+      );
+
+      final data = jsonDecode(response.body);
+      setState(() {
+        _exitoRol   = data['success'] == true;
+        _mensajeRol = _exitoRol
+            ? 'Rol actualizado correctamente a "${_rolSeleccionado}"'
+            : data['mensaje'] ?? 'Error al actualizar rol';
+      });
+    } catch (e) {
+      setState(() { _exitoRol = false; _mensajeRol = 'No se pudo conectar al servidor'; });
+    } finally {
+      setState(() => _guardandoRol = false);
     }
   }
 
@@ -207,8 +234,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           '${e['nombres'] ?? ''} ${e['apellidos'] ?? ''}',
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       body: SingleChildScrollView(
@@ -220,7 +246,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // Datos del empleado (solo lectura)
+                // ── Datos del empleado (solo lectura) ──────
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -233,25 +259,20 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Datos del Trabajador',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF001E42))),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF001E42))),
                       const Divider(height: 20),
-                      _FilaDato(label: 'Nombre', valor: '${e['nombres'] ?? ''} ${e['apellidos'] ?? ''}'),
-                      _FilaDato(label: 'Cargo',  valor: e['cargo'] ?? '—'),
-                      _FilaDato(label: 'Ingreso', valor: e['fecha_ingreso'] ?? '—'),
+                      _FilaDato(label: 'Nombre',   valor: '${e['nombres'] ?? ''} ${e['apellidos'] ?? ''}'),
+                      _FilaDato(label: 'Cargo',    valor: e['cargo'] ?? '—'),
+                      _FilaDato(label: 'Ingreso',  valor: e['fecha_ingreso'] ?? '—'),
                       _FilaDato(label: 'Contrato', valor: e['tipo_contrato'] ?? '—'),
-                      _FilaDato(
-                        label: 'Meses en la clinica',
-                        valor: '$_mesesClinica meses (${_mesesClinica ~/ 12} anos)',
-                      ),
+                      _FilaDato(label: 'Meses en la clinica',
+                          valor: '$_mesesClinica meses (${_mesesClinica ~/ 12} anos)'),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // Seccion cotizaciones previas
+                // ── Cotizaciones previas ───────────────────
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -264,14 +285,10 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Row(children: [
-                        Icon(Icons.history_edu_outlined,
-                            color: Color(0xFF001E42), size: 20),
+                        Icon(Icons.history_edu_outlined, color: Color(0xFF001E42), size: 20),
                         SizedBox(width: 8),
                         Text('Cotizaciones Previas (Art. 68)',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF001E42))),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF001E42))),
                       ]),
                       const Divider(height: 20),
                       const Text(
@@ -279,8 +296,6 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                       ),
                       const SizedBox(height: 16),
-
-                      // Campo meses
                       TextFormField(
                         controller: _mesesCtrl,
                         keyboardType: TextInputType.number,
@@ -292,81 +307,47 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                           helperText: 'Numero entero entre 0 y 600',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                           enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFFCBD5E1))),
+                              borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF001E42), width: 1.8)),
+                              borderSide: const BorderSide(color: Color(0xFF001E42), width: 1.8)),
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Calculo en tiempo real
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: _cumpleProgresivos
-                              ? const Color(0xFFE6FFFB)
-                              : const Color(0xFFFFF7ED),
+                          color: _cumpleProgresivos ? const Color(0xFFE6FFFB) : const Color(0xFFFFF7ED),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: _cumpleProgresivos
-                                ? const Color(0xFF5EEAD4)
-                                : const Color(0xFFFBBF24),
+                            color: _cumpleProgresivos ? const Color(0xFF5EEAD4) : const Color(0xFFFBBF24),
                           ),
                         ),
                         child: Column(children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Meses previos (max 120):',
-                                  style: TextStyle(fontSize: 13)),
-                              Text(
-                                '${(int.tryParse(_mesesCtrl.text) ?? 0).clamp(0, 120)} meses',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Text('Meses previos (max 120):', style: TextStyle(fontSize: 13)),
+                            Text('${(int.tryParse(_mesesCtrl.text) ?? 0).clamp(0, 120)} meses',
+                                style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ]),
                           const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Meses en la clinica:',
-                                  style: TextStyle(fontSize: 13)),
-                              Text('$_mesesClinica meses',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Text('Meses en la clinica:', style: TextStyle(fontSize: 13)),
+                            Text('$_mesesClinica meses', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ]),
                           const Divider(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Total:',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15)),
-                              Text('$_totalMeses meses',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15)),
-                            ],
-                          ),
+                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text('$_totalMeses meses', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          ]),
                           const SizedBox(height: 8),
                           Row(children: [
                             Icon(
-                              _cumpleProgresivos
-                                  ? Icons.check_circle_outline
-                                  : Icons.info_outline,
-                              color: _cumpleProgresivos
-                                  ? const Color(0xFF0D9488)
-                                  : const Color(0xFFF59E0B),
+                              _cumpleProgresivos ? Icons.check_circle_outline : Icons.info_outline,
+                              color: _cumpleProgresivos ? const Color(0xFF0D9488) : const Color(0xFFF59E0B),
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -377,9 +358,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                                     : 'No cumple 120 meses aun — faltan ${120 - _totalMeses} meses para dias progresivos',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: _cumpleProgresivos
-                                      ? const Color(0xFF0D9488)
-                                      : const Color(0xFFF59E0B),
+                                  color: _cumpleProgresivos ? const Color(0xFF0D9488) : const Color(0xFFF59E0B),
                                 ),
                               ),
                             ),
@@ -387,13 +366,8 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         ]),
                       ),
                       const SizedBox(height: 16),
-
-                      // Subir certificado AFP
                       const Text('Certificado AFP (PDF, max 5 MB) *',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: Color(0xFF475569))),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF475569))),
                       const SizedBox(height: 8),
                       InkWell(
                         onTap: _seleccionarCertificado,
@@ -402,24 +376,16 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: _certificadoBytes != null
-                                ? const Color(0xFFE6FFFB)
-                                : const Color(0xFFF8FAFC),
+                            color: _certificadoBytes != null ? const Color(0xFFE6FFFB) : const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: _certificadoBytes != null
-                                  ? const Color(0xFF5EEAD4)
-                                  : const Color(0xFFCBD5E1),
+                              color: _certificadoBytes != null ? const Color(0xFF5EEAD4) : const Color(0xFFCBD5E1),
                             ),
                           ),
                           child: Row(children: [
                             Icon(
-                              _certificadoBytes != null
-                                  ? Icons.picture_as_pdf
-                                  : Icons.upload_file_outlined,
-                              color: _certificadoBytes != null
-                                  ? const Color(0xFF0D9488)
-                                  : const Color(0xFF64748B),
+                              _certificadoBytes != null ? Icons.picture_as_pdf : Icons.upload_file_outlined,
+                              color: _certificadoBytes != null ? const Color(0xFF0D9488) : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -429,15 +395,12 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                                     : 'Haz clic para subir el certificado AFP',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: _certificadoBytes != null
-                                      ? const Color(0xFF0D9488)
-                                      : const Color(0xFF94A3B8),
+                                  color: _certificadoBytes != null ? const Color(0xFF0D9488) : const Color(0xFF94A3B8),
                                 ),
                               ),
                             ),
                             if (_certificadoBytes != null)
-                              const Icon(Icons.check_circle_outline,
-                                  color: Color(0xFF0D9488), size: 18),
+                              const Icon(Icons.check_circle_outline, color: Color(0xFF0D9488), size: 18),
                           ]),
                         ),
                       ),
@@ -446,7 +409,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                 ),
                 const SizedBox(height: 20),
 
-                // Seccion AFP
+                // ── AFP del Trabajador ─────────────────────
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -459,14 +422,10 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Row(children: [
-                        Icon(Icons.account_balance_outlined,
-                            color: Color(0xFF001E42), size: 20),
+                        Icon(Icons.account_balance_outlined, color: Color(0xFF001E42), size: 20),
                         SizedBox(width: 8),
                         Text('AFP del Trabajador',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF001E42))),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF001E42))),
                       ]),
                       const Divider(height: 20),
                       DropdownButtonFormField<String>(
@@ -475,31 +434,24 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                           labelText: 'AFP *',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                           enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFFCBD5E1))),
+                              borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                  color: Color(0xFF001E42), width: 1.8)),
+                              borderSide: const BorderSide(color: Color(0xFF001E42), width: 1.8)),
                         ),
-                        items: _afpListAdmin
-                            .map((a) => DropdownMenuItem(
-                                value: a, child: Text(a)))
-                            .toList(),
+                        items: _afpListAdmin.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
                         onChanged: (v) => setState(() => _afpSeleccionada = v),
-                        validator: (v) =>
-                            v == null ? 'Selecciona una AFP' : null,
+                        validator: (v) => v == null ? 'Selecciona una AFP' : null,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // Mensaje
+                // ── Mensaje AFP/Cotizaciones ───────────────
                 if (_mensaje.isNotEmpty)
                   Container(
                     width: double.infinity,
@@ -508,53 +460,168 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                     decoration: BoxDecoration(
                       color: _exito ? Colors.green[50] : Colors.red[50],
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color:
-                            _exito ? Colors.green[200]! : Colors.red[200]!,
-                      ),
+                      border: Border.all(color: _exito ? Colors.green[200]! : Colors.red[200]!),
                     ),
                     child: Row(children: [
                       Icon(
-                        _exito
-                            ? Icons.check_circle_outline
-                            : Icons.error_outline,
-                        color: _exito ? Colors.green : Colors.red,
-                        size: 18,
+                        _exito ? Icons.check_circle_outline : Icons.error_outline,
+                        color: _exito ? Colors.green : Colors.red, size: 18,
                       ),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(_mensaje,
-                            style: TextStyle(
-                                color: _exito ? Colors.green : Colors.red,
-                                fontSize: 13)),
-                      ),
+                      Expanded(child: Text(_mensaje,
+                          style: TextStyle(color: _exito ? Colors.green : Colors.red, fontSize: 13))),
                     ]),
                   ),
 
-                // Boton guardar
+                // ── Boton guardar AFP/Cotizaciones ─────────
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton.icon(
                     onPressed: _guardando ? null : _guardar,
                     icon: _guardando
-                        ? const SizedBox(
-                            width: 20, height: 20,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2.5))
+                        ? const SizedBox(width: 20, height: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                         : const Icon(Icons.save_outlined),
-                    label: Text(
-                      _guardando ? 'Guardando...' : 'Guardar Cambios',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
+                    label: Text(_guardando ? 'Guardando...' : 'Guardar AFP y Cotizaciones',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF001E42),
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // ══════════════════════════════════════════
+                // ── SECCION ASIGNACION DE ROL ──────────────
+                // ══════════════════════════════════════════
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(children: [
+                        Icon(Icons.manage_accounts_outlined, color: Color(0xFF001E42), size: 20),
+                        SizedBox(width: 8),
+                        Text('Asignacion de Rol',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF001E42))),
+                      ]),
+                      const Divider(height: 20),
+
+                      // Nota informativa
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text('Roles disponibles:',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E3A8A))),
+                            SizedBox(height: 6),
+                            Text('• Jefe: puede ver informacion de su area y tiene modulos de supervision.',
+                                style: TextStyle(fontSize: 12, color: Color(0xFF1E3A8A))),
+                            SizedBox(height: 4),
+                            Text('• Usuario: solo ve su propia informacion personal.',
+                                style: TextStyle(fontSize: 12, color: Color(0xFF1E3A8A))),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Dropdown rol — lista cerrada, sin entrada manual
+                      DropdownButtonFormField<String>(
+                        value: _rolSeleccionado,
+                        decoration: InputDecoration(
+                          labelText: 'Rol del trabajador *',
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(color: Color(0xFF001E42), width: 1.8)),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'usuario',
+                            child: Row(children: const [
+                              Icon(Icons.person_outline, size: 18, color: Color(0xFF2563EB)),
+                              SizedBox(width: 8),
+                              Text('Usuario'),
+                            ]),
+                          ),
+                          DropdownMenuItem(
+                            value: 'jefe',
+                            child: Row(children: const [
+                              Icon(Icons.supervisor_account_outlined, size: 18, color: Color(0xFF9333EA)),
+                              SizedBox(width: 8),
+                              Text('Jefe'),
+                            ]),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => _rolSeleccionado = v),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Mensaje rol
+                      if (_mensajeRol.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: _exitoRol ? Colors.green[50] : Colors.red[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: _exitoRol ? Colors.green[200]! : Colors.red[200]!),
+                          ),
+                          child: Row(children: [
+                            Icon(
+                              _exitoRol ? Icons.check_circle_outline : Icons.error_outline,
+                              color: _exitoRol ? Colors.green : Colors.red, size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(_mensajeRol,
+                                style: TextStyle(color: _exitoRol ? Colors.green : Colors.red, fontSize: 13))),
+                          ]),
+                        ),
+
+                      // Boton guardar rol
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: _guardandoRol ? null : _guardarRol,
+                          icon: _guardandoRol
+                              ? const SizedBox(width: 18, height: 18,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Icon(Icons.manage_accounts_outlined),
+                          label: Text(_guardandoRol ? 'Guardando...' : 'Guardar Rol',
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1D4ED8),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -581,16 +648,10 @@ class _FilaDato extends StatelessWidget {
         children: [
           SizedBox(
             width: 160,
-            child: Text(label,
-                style: const TextStyle(
-                    fontSize: 13, color: Color(0xFF64748B))),
+            child: Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
           ),
           Expanded(
-            child: Text(valor,
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A))),
+            child: Text(valor, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
           ),
         ],
       ),

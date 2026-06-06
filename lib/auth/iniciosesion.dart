@@ -121,17 +121,6 @@ class AdminDashboard extends StatelessWidget {
               ),
               _buildCard(
                 context,
-                icon: Icons.manage_accounts_outlined,
-                color: Colors.blue,
-                title: 'Asignación de Roles',
-                descripcion: 'Gestionar roles de los trabajadores',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AsignacionRoles()),
-                ),
-              ),
-              _buildCard(
-                context,
                 icon: Icons.calculate_outlined,
                 color: Colors.teal,
                 title: 'Cálculo Horas Extra',
