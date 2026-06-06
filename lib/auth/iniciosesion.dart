@@ -22,6 +22,7 @@ import '../screens/USUARIO/descargaLiquidacion.dart';
 import '../screens/USUARIO/solicitudVacaciones.dart';
 import '../screens/USUARIO/vacacionesProgresivas.dart';
 import '../screens/USUARIO/historialVacaciones.dart';
+import '../screens/USUARIO/balanceVacaciones.dart';
 // URL de la API
 const String apiUrl = 'http://127.0.0.1:8000';
 
@@ -377,6 +378,14 @@ class UsuarioDashboard extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const HistorialVacaciones())
                 ),
               ),
+              _buildCard(context,
+                icon: Icons.account_balance_wallet_outlined,
+                color: Colors.teal,
+                title: 'Balance de Vacaciones',
+                descripcion: 'Ver mis dias acumulados, utilizados y disponibles',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const BalanceVacaciones())),
+              ),
             ],
           ),
         ),
@@ -560,6 +569,14 @@ class JefeDashboard extends StatelessWidget {
                 descripcion: 'Ver todas mis solicitudes de vacaciones',
                 onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const HistorialVacaciones())),
+              ),
+              _buildCard(context,
+                icon: Icons.account_balance_wallet_outlined,
+                color: Colors.teal,
+                title: 'Balance de Vacaciones',
+                descripcion: 'Ver mis dias acumulados, utilizados y disponibles',
+                onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const BalanceVacaciones())),
               ),
             ],
           ),
