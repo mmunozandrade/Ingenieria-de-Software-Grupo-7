@@ -78,10 +78,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     if (_afpSeleccionada != null && !_afpListAdmin.contains(_afpSeleccionada)) {
       _afpSeleccionada = null;
     }
-    final rolActual = widget.empleado['rol'] ?? 'usuario';
-    _rolSeleccionado = _rolesDisponibles.contains(rolActual)
-        ? rolActual
-        : 'usuario';
+    _rolSeleccionado = null; // Inicia vacío — Excepción 1
     _calcularMeses();
   }
 
@@ -134,6 +131,10 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
   // ── Prellenar formulario edicion ──────────────────────────
   void _abrirFormulario() {
     final e = widget.empleado;
+    final salud = (e['tipo_salud'] ?? e['institucion_salud'] ?? '')
+        .toString()
+        .trim();
+    final contrato = e['tipo_contrato'] ?? '';
     _primerNombreCtrl.text = e['primer_nombre'] ?? '';
     _segundoNombreCtrl.text = e['segundo_nombre'] ?? '';
     _apPaternoCtrl.text = e['apellido_paterno'] ?? '';
@@ -143,8 +144,8 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     _cargoCtrl.text = e['cargo'] ?? '';
     _sueldoCtrl.text = e['sueldo_base']?.toString() ?? '';
     _discapacidadCtrl.text = e['discapacidad'] ?? '';
-    _saludEdicion = e['tipo_salud'];
-    _tipoContratoEdicion = e['tipo_contrato'];
+    _saludEdicion = _institucionesSalud.contains(salud) ? salud : null;
+    _tipoContratoEdicion = _tiposContrato.contains(contrato) ? contrato : null;
     if (e['fecha_ingreso'] != null) {
       final p = (e['fecha_ingreso'] as String).split('/');
       if (p.length == 3)

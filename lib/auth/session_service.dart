@@ -13,14 +13,14 @@ class SessionService {
     required String rol,
     required String nombreCompleto,
     required String cargo,
-    required int idUsuario,
+    required int personaId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_rolKey, rol);
     await prefs.setString(_nombreKey, nombreCompleto);
     await prefs.setString(_cargoKey, cargo);
-    await prefs.setInt(_idKey, idUsuario);
+    await prefs.setInt(_idKey, personaId);
   }
 
   // Obtener token guardado
