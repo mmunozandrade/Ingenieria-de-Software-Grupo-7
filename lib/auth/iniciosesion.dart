@@ -14,6 +14,7 @@ import '../screens/ADMIN/cargaArchivos.dart';
 import '../screens/ADMIN/registroBonos.dart';
 import '../screens/ADMIN/registroEmpleado.dart';
 import '../screens/ADMIN/busquedaEmpleados.dart';
+import '../screens/ADMIN/cuentasPendientes.dart';
 //Pantalla JEFE
 import '../screens/JEFE/panelResumenJefe.dart';
 import '../screens/JEFE/vacacionesAreaJefe.dart';
@@ -23,6 +24,7 @@ import '../screens/USUARIO/solicitudVacaciones.dart';
 import '../screens/USUARIO/vacacionesProgresivas.dart';
 import '../screens/USUARIO/historialVacaciones.dart';
 import '../screens/USUARIO/balanceVacaciones.dart';
+
 // URL de la API
 const String apiUrl = 'http://127.0.0.1:8000';
 
@@ -166,23 +168,36 @@ class AdminDashboard extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const FichaUsuario()),
                 ),
               ),
-              _buildCard(
+              /*_buildCard(
                 context,
-                icon: Icons.person_add_outlined,
+                //icon: Icons.person_add_outlined,
                 color: Colors.green,
                 title: 'Registrar Empleado',
                 descripcion: 'Agregar o editar trabajadores del sistema',
                 onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const RegistroEmpleado())
                 ),
-              ),
-              _buildCard(context,
+              ),*/
+              _buildCard(
+                context,
                 icon: Icons.manage_search_outlined,
                 color: Colors.deepPurple,
                 title: 'Buscar Empleados',
                 descripcion: 'Buscar trabajadores por apellido o RUT',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const BusquedaEmpleados())
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BusquedaEmpleados()),
+                ),
+              ),
+              _buildCard(
+                context,
+                icon: Icons.person_search_outlined,
+                color: Colors.orange,
+                title: 'Cuentas Pendientes',
+                descripcion: 'Completar datos de trabajadores registrados',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CuentasPendientes()),
                 ),
               ),
             ],
@@ -368,23 +383,30 @@ class UsuarioDashboard extends StatelessWidget {
                   ),
                 ),
               ),
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.history_outlined,
                 color: Colors.indigo,
                 title: 'Historial de Vacaciones',
                 descripcion: 'Ver todas mis solicitudes de vacaciones',
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const HistorialVacaciones())
+                  MaterialPageRoute(
+                    builder: (_) => const HistorialVacaciones(),
+                  ),
                 ),
               ),
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.account_balance_wallet_outlined,
                 color: Colors.teal,
                 title: 'Balance de Vacaciones',
-                descripcion: 'Ver mis dias acumulados, utilizados y disponibles',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const BalanceVacaciones())),
+                descripcion:
+                    'Ver mis dias acumulados, utilizados y disponibles',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BalanceVacaciones()),
+                ),
               ),
             ],
           ),
@@ -433,6 +455,7 @@ class UsuarioDashboard extends StatelessWidget {
     );
   }
 }
+
 // ============================================================
 // DASHBOARD JEFE
 // ============================================================
@@ -461,11 +484,19 @@ class JefeDashboard extends StatelessWidget {
           ),
           actions: [
             TextButton.icon(
-              onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const FichaUsuario())),
-              icon: const Icon(Icons.person_outline, color: Colors.white, size: 20),
-              label: const Text('Mi Ficha',
-                  style: TextStyle(color: Colors.white, fontSize: 13)),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FichaUsuario()),
+              ),
+              icon: const Icon(
+                Icons.person_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+              label: const Text(
+                'Mi Ficha',
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.logout, color: Colors.white),
@@ -490,93 +521,133 @@ class JefeDashboard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Bienvenido/a, $nombreCompleto',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold)),
+                    Text(
+                      'Bienvenido/a, $nombreCompleto',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(cargo,
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 14)),
+                    Text(
+                      cargo,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    const Text('Rol: Jefe de Area',
-                        style: TextStyle(
-                            color: Color(0xFF93C5FD), fontSize: 13)),
+                    const Text(
+                      'Rol: Jefe de Area',
+                      style: TextStyle(color: Color(0xFF93C5FD), fontSize: 13),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
               // Modulos exclusivos del jefe
-              const Text('Modulos de Supervision',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Modulos de Supervision',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 16),
 
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.dashboard_outlined,
                 color: const Color(0xFF1D4ED8),
                 title: 'Panel Resumen del Area',
                 descripcion: 'Ver equipo, solicitudes y contratos por vencer',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const PanelResumenJefe())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PanelResumenJefe()),
+                ),
               ),
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.calendar_month_outlined,
                 color: const Color(0xFF0D9488),
                 title: 'Vacaciones del Area',
                 descripcion: 'Ver saldos e historial de solicitudes',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const VacacionesAreaJefe())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const VacacionesAreaJefe()),
+                ),
               ),
 
               const SizedBox(height: 24),
-              const Text('Mis Modulos',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Mis Modulos',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 16),
 
               // Mismos modulos que usuario
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.calendar_today_outlined,
                 color: Colors.blue,
                 title: 'Solicitud de Vacaciones',
                 descripcion: 'Solicitar y revisar mis vacaciones',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SolicitudVacaciones())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SolicitudVacaciones(),
+                  ),
+                ),
               ),
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.download_outlined,
                 color: Colors.red,
                 title: 'Mis Liquidaciones',
                 descripcion: 'Descargar mis liquidaciones de sueldo',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const DescargaLiquidacion())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DescargaLiquidacion(),
+                  ),
+                ),
               ),
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.trending_up,
                 color: Colors.purple,
                 title: 'Vacaciones Progresivas',
                 descripcion: 'Ver mis dias de vacaciones segun antiguedad',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const VacacionesProgresivas())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const VacacionesProgresivas(),
+                  ),
+                ),
               ),
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.history_outlined,
                 color: Colors.indigo,
                 title: 'Historial de Vacaciones',
                 descripcion: 'Ver todas mis solicitudes de vacaciones',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const HistorialVacaciones())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const HistorialVacaciones(),
+                  ),
+                ),
               ),
-              _buildCard(context,
+              _buildCard(
+                context,
                 icon: Icons.account_balance_wallet_outlined,
                 color: Colors.teal,
                 title: 'Balance de Vacaciones',
-                descripcion: 'Ver mis dias acumulados, utilizados y disponibles',
-                onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const BalanceVacaciones())),
+                descripcion:
+                    'Ver mis dias acumulados, utilizados y disponibles',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BalanceVacaciones()),
+                ),
               ),
             ],
           ),
@@ -585,7 +656,8 @@ class JefeDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildCard(BuildContext context, {
+  Widget _buildCard(
+    BuildContext context, {
     required IconData icon,
     required Color color,
     required String title,
@@ -602,10 +674,14 @@ class JefeDashboard extends StatelessWidget {
           backgroundColor: color.withOpacity(0.1),
           child: Icon(icon, color: color),
         ),
-        title: Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        subtitle: Text(descripcion,
-            style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
+        subtitle: Text(
+          descripcion,
+          style: const TextStyle(fontSize: 13, color: Colors.grey),
+        ),
         trailing: const Icon(Icons.chevron_right, color: Colors.grey),
         onTap: onTap,
       ),
@@ -620,6 +696,7 @@ class JefeDashboard extends StatelessWidget {
     );
   }
 }
+
 // ============================================================
 // PANTALLA LOGIN
 // ============================================================
@@ -693,7 +770,8 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
                   AdminDashboard(nombreCompleto: nombreCompleto, cargo: cargo),
             ),
           );
-        } else if (rol == 'usuario') { ////////////Roles de usuairo
+        } else if (rol == 'usuario') {
+          ////////////Roles de usuairo
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -707,14 +785,11 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => JefeDashboard(
-                nombreCompleto: nombreCompleto,
-                cargo: cargo,
-              ),
+              builder: (_) =>
+                  JefeDashboard(nombreCompleto: nombreCompleto, cargo: cargo),
             ),
           );
         }
-        
       } else {
         setState(() => _error = data['mensaje'] ?? 'Credenciales incorrectas.');
       }

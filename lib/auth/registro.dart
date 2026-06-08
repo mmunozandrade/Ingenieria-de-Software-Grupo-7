@@ -77,10 +77,26 @@ class _RegistroPageState extends State<RegistroPage> {
       setState(() => _error = 'Por favor completa todos los campos.');
       return;
     }
-    if (!correo.endsWith('@accaconcagua.cl')) {
+    if (!RegExp(r'^[a-zA-Z0-9.\-]+@accaconcagua\.cl$').hasMatch(correo)) {
       setState(
         () => _error = 'Debes usar tu correo institucional @accaconcagua.cl',
       );
+      return;
+    }
+    if (correo.length > 100) {
+      setState(() => _error = 'El correo no puede superar 100 caracteres');
+      return;
+    }
+    if (contrasena.contains(' ')) {
+      setState(() => _error = 'La contraseña no puede contener espacios');
+      return;
+    }
+    if (contrasena.length < 8) {
+      setState(() => _error = 'La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    if (contrasena.length > 64) {
+      setState(() => _error = 'La contraseña no puede superar 64 caracteres');
       return;
     }
     if (!_contrasenaValida) {
