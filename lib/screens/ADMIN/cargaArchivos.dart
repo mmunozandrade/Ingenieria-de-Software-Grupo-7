@@ -38,29 +38,54 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
   Future<void> _seleccionarArchivoZip() async {
     final resultado = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['zip'],
+      allowedExtensions: ['zip', 'pdf', 'docx', 'xlsx'],
       withData: true,
     );
     if (resultado == null) return;
 
     final archivo = resultado.files.single;
+
+    // Validar que el archivo sea .zip
+    if (!archivo.name.toLowerCase().endsWith('.zip')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 10),
+              Expanded(child: Text('Formato incorrecto. Solo se permiten archivos .zip')),
+            ]),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() {
       _nombreArchivo = archivo.name;
-      _archivoBytes = archivo.bytes;
-      _procesados = null;
-      _errores = null;
+      _archivoBytes  = archivo.bytes;
+      _procesados    = null;
+      _errores       = null;
       _detalleProcessados = [];
-      _detalleErrores = [];
-      _exito = null;
+      _detalleErrores     = [];
+      _exito  = null;
       _mensaje = '';
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Archivo seleccionado: ${archivo.name}'),
-        backgroundColor: const Color(0xFF0F9F8F),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white),
+            const SizedBox(width: 10),
+            Text('Archivo seleccionado: ${archivo.name}'),
+          ]),
+          backgroundColor: const Color(0xFF0F9F8F),
+        ),
+      );
+    }
   }
 
   // ── Subir ZIP al backend ──────────────────────────────────

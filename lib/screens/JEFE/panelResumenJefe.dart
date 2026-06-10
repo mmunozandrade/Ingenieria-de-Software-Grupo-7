@@ -87,15 +87,36 @@ class _PanelResumenJefeState extends State<PanelResumenJefe> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline,
-                          color: Colors.red, size: 48),
-                      const SizedBox(height: 12),
-                      Text(_error,
-                          style: const TextStyle(color: Colors.red)),
+                      const Icon(Icons.group_off_outlined,
+                          color: Color(0xFFD97706), size: 64),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _cargarDatos,
-                        child: const Text('Reintentar'),
+                      const Text(
+                        'No posee personal a cargo asignado',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF001E42),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Su cuenta no tiene un área o equipo asignado.\nContacte al administrador.',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Volver al Inicio'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF001E42),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
                       ),
                     ],
                   ),

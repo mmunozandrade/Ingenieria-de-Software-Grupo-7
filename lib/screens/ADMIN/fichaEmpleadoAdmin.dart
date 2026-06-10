@@ -223,6 +223,13 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       });
       return;
     }
+    if (_certificadoBytes == null) {
+      setState(() {
+        _exito = false;
+        _mensaje = 'Debes adjuntar el certificado AFP en formato PDF';
+      });
+      return;
+    }
     setState(() {
       _guardando = true;
       _mensaje = '';
