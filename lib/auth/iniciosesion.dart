@@ -369,17 +369,17 @@ class AdminDashboard extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildCard(
-                  context,
-                  icon: Icons.calculate_outlined,
-                  color: Colors.teal,
-                  title: 'Cálculo Horas Extra',
-                  descripcion: 'Registrar y calcular horas extras al 50%',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CalculoHextra()),
-                  ),
-                ),
+                //_buildCard(
+                //context,
+                //icon: Icons.calculate_outlined,
+                //color: Colors.teal,
+                //title: 'Cálculo Horas Extra',
+                //descripcion: 'Registrar y calcular horas extras al 50%',
+                //onTap: () => Navigator.push(
+                //context,
+                // MaterialPageRoute(builder: (_) => const CalculoHextra()),
+                //),
+                //),
                 _buildCard(
                   context,
                   icon: Icons.upload_file_outlined,
@@ -393,17 +393,17 @@ class AdminDashboard extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildCard(
-                  context,
-                  icon: Icons.attach_money,
-                  color: Colors.orange,
-                  title: 'Registro de Bonos',
-                  descripcion: 'Registrar bonos imponibles del personal',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegistrarBonos()),
-                  ),
-                ),
+                //_buildCard(
+                // context,
+                //icon: Icons.attach_money,
+                //color: Colors.orange,
+                //title: 'Registro de Bonos',
+                //descripcion: 'Registrar bonos imponibles del personal',
+                //onTap: () => Navigator.push(
+                //context,
+                //MaterialPageRoute(builder: (_) => const RegistrarBonos()),
+                //),
+                //),
                 _buildCard(
                   context,
                   icon: Icons.person_outline,
