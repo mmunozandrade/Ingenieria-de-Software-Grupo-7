@@ -81,7 +81,7 @@ class _HistorialVacacionesState extends State<HistorialVacaciones> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('El recibo no esta disponible aun'),
+            content: Text('El sistema no pudo generar el comprobante. Verifique que todos los datos esten completos'),
             backgroundColor: Colors.orange,
           ));
         }
