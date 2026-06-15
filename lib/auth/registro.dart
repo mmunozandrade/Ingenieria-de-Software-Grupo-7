@@ -143,7 +143,7 @@ class _RegistroPageState extends State<RegistroPage> {
       }
     } catch (e) {
       setState(
-        () => _error = 'No se pudo conectar al servidor. Verifica tu conexión.',
+        () => _error = 'No se pudo establecer conexión con el servidor. Por favor, verifica tu conexión.',
       );
     } finally {
       setState(() => _cargando = false);
@@ -436,7 +436,7 @@ class _RegistroPageState extends State<RegistroPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('¿Ya tienes una cuenta? '),
+                  const Text('¿Ya tienes una cuenta registrada? '),
                   TextButton(
                     onPressed: () => Navigator.pushReplacement(
                       context,
