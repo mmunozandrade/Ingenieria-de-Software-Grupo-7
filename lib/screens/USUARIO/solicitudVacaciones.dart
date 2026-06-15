@@ -17,37 +17,37 @@ const List<String> _feriadosChile = [
   // 2025
   '2025-01-01', // Año Nuevo
   '2025-04-18', // Viernes Santo
-  '2025-04-19', // Sabado Santo
-  '2025-05-01', // Dia del Trabajo
+  '2025-04-19', // Sábado Santo
+  '2025-05-01', // Día del Trabajo
   '2025-05-21', // Glorias Navales
-  '2025-06-20', // Dia de los Pueblos Indigenas
+  '2025-06-20', // Día de los Pueblos Indígenas
   '2025-06-29', // San Pedro y San Pablo
   '2025-07-16', // Virgen del Carmen
   '2025-08-15', // Asuncion de la Virgen
   '2025-09-18', // Independencia Nacional
   '2025-09-19', // Glorias del Ejercito
   '2025-10-12', // Encuentro de Dos Mundos
-  '2025-10-31', // Dia de las Iglesias Evangelicas
-  '2025-11-01', // Dia de Todos los Santos
+  '2025-10-31', // Día de las Iglesias Evangélicas
+  '2025-11-01', // Día de Todos los Santos
   '2025-11-16', // Elecciones (feriado irrenunciable)
-  '2025-12-08', // Inmaculada Concepcion
+  '2025-12-08', // Inmaculada Concepción
   '2025-12-25', // Navidad
   // 2026
   '2026-01-01', // Año Nuevo
   '2026-04-03', // Viernes Santo
-  '2026-04-04', // Sabado Santo
-  '2026-05-01', // Dia del Trabajo
+  '2026-04-04', // Sábado Santo
+  '2026-05-01', // Día del Trabajo
   '2026-05-21', // Glorias Navales
-  '2026-06-22', // Dia de los Pueblos Indigenas
+  '2026-06-22', // Día de los Pueblos Indígenas
   '2026-06-29', // San Pedro y San Pablo
   '2026-07-16', // Virgen del Carmen
   '2026-08-15', // Asuncion de la Virgen
   '2026-09-18', // Independencia Nacional
   '2026-09-19', // Glorias del Ejercito
   '2026-10-12', // Encuentro de Dos Mundos
-  '2026-10-31', // Dia de las Iglesias Evangelicas
-  '2026-11-01', // Dia de Todos los Santos
-  '2026-12-08', // Inmaculada Concepcion
+  '2026-10-31', // Día de las Iglesias Evangélicas
+  '2026-11-01', // Día de Todos los Santos
+  '2026-12-08', // Inmaculada Concepción
   '2026-12-25', // Navidad
 ];
 
@@ -169,7 +169,7 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'La fecha de inicio no puede ser un sabado, domingo o festivo',
+              'La fecha de inicio no puede ser un sábado, domingo o festivo',
             ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
@@ -193,7 +193,7 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
     if (diasHabiles == 0) {
       setState(() {
         _exito   = false;
-        _mensaje = 'El periodo seleccionado no contiene dias habiles.';
+        _mensaje = 'El período seleccionado no contiene días hábiles.';
       });
       return;
     }
@@ -219,7 +219,7 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
       setState(() {
         _exito   = data['success'] == true;
         _mensaje = _exito
-            ? 'Solicitud enviada correctamente. Queda pendiente de aprobacion.'
+            ? 'Solicitud enviada correctamente. Queda pendiente de aprobación.'
             : data['mensaje'] ?? 'Error al enviar la solicitud';
       });
 
@@ -311,7 +311,7 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
             ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Cerrar Sesion',
+              title: const Text('Cerrar Sesión',
                   style: TextStyle(color: Colors.red)),
               onTap: () {},
             ),
@@ -439,7 +439,7 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
                             mainAxisAlignment:
                                 MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('Dias habiles a tomar:',
+                              const Text('Días hábiles a tomar:',
                                   style:
                                       TextStyle(color: Color(0xFF475569))),
                               Text(
@@ -462,13 +462,13 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
                                 MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'Sabados, domingos y feriados excluidos:',
+                                'Sábados, domingos y feriados excluidos:',
                                 style: TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 12),
                               ),
                               Text(
-                                '$diasNoHabiles dias',
+                                '$diasNoHabiles días',
                                 style: const TextStyle(
                                     color: Color(0xFF94A3B8),
                                     fontSize: 12,
@@ -503,7 +503,7 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
                             const Padding(
                               padding: EdgeInsets.only(top: 8),
                               child: Text(
-                                'El periodo seleccionado no tiene dias habiles (son todos feriados o fin de semana).',
+                                'El período seleccionado no tiene días hábiles (son todos feriados o fin de semana).',
                                 style: TextStyle(
                                     color: Colors.orange, fontSize: 12),
                               ),
@@ -513,7 +513,7 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
                             const Padding(
                               padding: EdgeInsets.only(top: 8),
                               child: Text(
-                                'Los dias solicitados superan su saldo disponible.',
+                                'Los días solicitados superan su saldo disponible.',
                                 style: TextStyle(
                                     color: Colors.red, fontSize: 12),
                               ),
@@ -540,7 +540,7 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'El calculo excluye automaticamente sabados, domingos y feriados nacionales de Chile vigentes.',
+                          'El cálculo excluye automáticamente sábados, domingos y feriados nacionales de Chile vigentes.',
                           style: TextStyle(
                               fontSize: 12, color: Color(0xFF92400E)),
                         ),
