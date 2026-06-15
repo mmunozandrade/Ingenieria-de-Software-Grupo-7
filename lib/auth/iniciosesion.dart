@@ -29,7 +29,7 @@ import '../screens/USUARIO/balanceVacaciones.dart';
 const String apiUrl = 'http://127.0.0.1:8000';
 
 // ============================================================
-// SESSION GUARD — Cierre automatico por inactividad/////////////////////////////////////
+// SESSION GUARD — Cierre automático por inactividad/////////////////////////////////////
 // ============================================================
 class SessionGuard extends StatefulWidget {
   final Widget child;
@@ -145,7 +145,7 @@ class _SessionGuardState extends State<SessionGuard> {
                 const SizedBox(width: 10),
                 const Expanded(
                   child: Text(
-                    'Sesion por expirar',
+                    'Sesión por expirar',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -159,7 +159,7 @@ class _SessionGuardState extends State<SessionGuard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Su sesion se cerrara en 2 minutos por inactividad',
+                  'Su sesión se cerrará en los próximos 2 minutos',
                   style: TextStyle(fontSize: 14, color: Color(0xFF475569)),
                   textAlign: TextAlign.center,
                 ),
@@ -201,7 +201,7 @@ class _SessionGuardState extends State<SessionGuard> {
                   _cerrarSesionManual(ctx);
                 },
                 child: const Text(
-                  'Cerrar Sesion',
+                  'Cerrar Sesión',
                   style: TextStyle(
                     color: Colors.red,
                     fontWeight: FontWeight.w600,
@@ -225,7 +225,7 @@ class _SessionGuardState extends State<SessionGuard> {
                   ),
                 ),
                 child: const Text(
-                  'Extender Sesion',
+                  'Extender Sesión',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -754,7 +754,7 @@ class JefeDashboard extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
-                tooltip: 'Cerrar sesion',
+                tooltip: 'Cerrar sesión',
                 onPressed: () => _cerrarSesion(context),
               ),
             ],
