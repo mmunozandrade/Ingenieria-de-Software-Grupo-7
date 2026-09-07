@@ -22,7 +22,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
 
   List<Map<String, dynamic>> _solicitudes = [];
 
-  // Observaciones por solicitud de vacaciones
+  // Observaciones por solicitud
   final Map<int, TextEditingController> _obsControllers = {};
   final Map<int, bool> _procesando = {};
 
@@ -249,519 +249,606 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Logo centrado
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                  child: Image.asset('assets/Logo.png', height: 70),
-                ),
-              ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final ancho = constraints.maxWidth;
+          final bool esEscritorio = ancho >= 1280;
+          final bool esTablet = ancho >= 768 && ancho < 1280;
+          final double paddingHorizontal = esEscritorio
+              ? 40
+              : (esTablet ? 28 : 16);
 
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 24,
-                ),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1100),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Filtros estado
-                      Row(
-                        children: [
-                          _FiltroBtn(
-                            texto: 'Pendiente',
-                            activo: _filtro == 'Pendiente',
-                            onTap: () {
-                              setState(() => _filtro = 'Pendiente');
-                              _cargarSolicitudes();
-                            },
-                          ),
-                          const SizedBox(width: 10),
-                          _FiltroBtn(
-                            texto: 'Aprobada',
-                            activo: _filtro == 'Aprobada',
-                            onTap: () {
-                              setState(() => _filtro = 'Aprobada');
-                              _cargarSolicitudes();
-                            },
-                          ),
-                          const SizedBox(width: 10),
-                          _FiltroBtn(
-                            texto: 'Rechazada',
-                            activo: _filtro == 'Rechazada',
-                            onTap: () {
-                              setState(() => _filtro = 'Rechazada');
-                              _cargarSolicitudes();
-                            },
-                          ),
-                          const SizedBox(width: 10),
-                          _FiltroBtn(
-                            texto: 'Todas',
-                            activo: _filtro == 'Todas',
-                            onTap: () {
-                              setState(() => _filtro = 'Todas');
-                              _cargarSolicitudes();
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
+          return SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Logo centrado
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Image.asset('assets/Logo.png', height: 70),
+                    ),
+                  ),
 
-                      // Filtro por anio
-                      Row(
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: paddingHorizontal,
+                      vertical: 24,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1100),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Filtrar por ano:',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF475569),
-                            ),
+                          // Filtros estado
+                          Row(
+                            children: [
+                              _FiltroBtn(
+                                texto: 'Pendiente',
+                                activo: _filtro == 'Pendiente',
+                                onTap: () {
+                                  setState(() => _filtro = 'Pendiente');
+                                  _cargarSolicitudes();
+                                },
+                              ),
+                              const SizedBox(width: 10),
+                              _FiltroBtn(
+                                texto: 'Aprobada',
+                                activo: _filtro == 'Aprobada',
+                                onTap: () {
+                                  setState(() => _filtro = 'Aprobada');
+                                  _cargarSolicitudes();
+                                },
+                              ),
+                              const SizedBox(width: 10),
+                              _FiltroBtn(
+                                texto: 'Rechazada',
+                                activo: _filtro == 'Rechazada',
+                                onTap: () {
+                                  setState(() => _filtro = 'Rechazada');
+                                  _cargarSolicitudes();
+                                },
+                              ),
+                              const SizedBox(width: 10),
+                              _FiltroBtn(
+                                texto: 'Todas',
+                                activo: _filtro == 'Todas',
+                                onTap: () {
+                                  setState(() => _filtro = 'Todas');
+                                  _cargarSolicitudes();
+                                },
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          SizedBox(
-                            width: 100,
-                            child: TextField(
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                hintText: 'Ej: 2026',
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFCBD5E1),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFCBD5E1),
-                                  ),
+                          const SizedBox(height: 12),
+
+                          // Filtro por anio
+                          Row(
+                            children: [
+                              const Text(
+                                'Filtrar por ano:',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF475569),
                                 ),
                               ),
-                              onChanged: (v) {
-                                final anio = int.tryParse(v);
-                                if (anio != null && v.length == 4) {
-                                  setState(() => _anioFiltro = anio);
-                                  _cargarSolicitudes();
-                                } else if (v.isEmpty) {
-                                  setState(() => _anioFiltro = null);
-                                  _cargarSolicitudes();
-                                }
-                              },
-                            ),
-                          ),
-                          if (_anioFiltro != null) ...[
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
-                              onPressed: () {
-                                setState(() => _anioFiltro = null);
-                                _cargarSolicitudes();
-                              },
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const Divider(color: Color(0xFFE2E8F0)),
-                      const SizedBox(height: 16),
-
-                      // Error
-                      if (_error.isNotEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red[200]!),
-                          ),
-                          child: Text(
-                            _error,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                        ),
-
-                      // Lista
-                      if (_cargando)
-                        const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF1D4ED8),
-                          ),
-                        )
-                      else if (_solicitudes.isEmpty)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
-                            child: Text(
-                              'No hay solicitudes en esta categoria.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF64748B),
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        Column(
-                          children: _solicitudes.map((s) {
-                            final id = s['id_solicitud'] as int;
-                            _obsControllers[id] ??= TextEditingController();
-                            final bool expandida = s['expandida'] == true;
-                            final bool pendiente = s['estado'] == 'Pendiente';
-                            final bool proc = _procesando[id] == true;
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: InkWell(
-                                onTap: () =>
-                                    setState(() => s['expandida'] = !expandida),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(22),
-                                  decoration: BoxDecoration(
-                                    color: expandida
-                                        ? const Color(0xFFEFF6FF)
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: expandida
-                                          ? const Color(0xFF3B82F6)
-                                          : const Color(0xFFE2E8F0),
-                                      width: expandida ? 1.5 : 1.2,
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 100,
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    hintText: 'Ej: 2026',
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 8,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFCBD5E1),
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFCBD5E1),
+                                      ),
                                     ),
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // Header tarjeta
-                                      Row(
+                                  onChanged: (v) {
+                                    final anio = int.tryParse(v);
+                                    if (anio != null && v.length == 4) {
+                                      setState(() => _anioFiltro = anio);
+                                      _cargarSolicitudes();
+                                    } else if (v.isEmpty) {
+                                      setState(() => _anioFiltro = null);
+                                      _cargarSolicitudes();
+                                    }
+                                  },
+                                ),
+                              ),
+                              if (_anioFiltro != null) ...[
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () {
+                                    setState(() => _anioFiltro = null);
+                                    _cargarSolicitudes();
+                                  },
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Divider(color: Color(0xFFE2E8F0)),
+                          const SizedBox(height: 16),
+
+                          // Error
+                          if (_error.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.red[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.red[200]!),
+                              ),
+                              child: Text(
+                                _error,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+
+                          // Lista
+                          if (_cargando)
+                            const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF1D4ED8),
+                              ),
+                            )
+                          else if (_solicitudes.isEmpty)
+                            const Center(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 40),
+                                child: Text(
+                                  'No hay solicitudes en esta categoria.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            Column(
+                              children: _solicitudes.map((s) {
+                                final id = s['id_solicitud'] as int;
+                                _obsControllers[id] ??= TextEditingController();
+                                final bool expandida = s['expandida'] == true;
+                                final bool pendiente =
+                                    s['estado'] == 'Pendiente';
+                                final bool proc = _procesando[id] == true;
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: InkWell(
+                                    onTap: () => setState(
+                                      () => s['expandida'] = !expandida,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(22),
+                                      decoration: BoxDecoration(
+                                        color: expandida
+                                            ? const Color(0xFFEFF6FF)
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: expandida
+                                              ? const Color(0xFF3B82F6)
+                                              : const Color(0xFFE2E8F0),
+                                          width: expandida ? 1.5 : 1.2,
+                                        ),
+                                      ),
+                                      child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Wrap(
+                                          // Header tarjeta
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
                                                   crossAxisAlignment:
-                                                      WrapCrossAlignment.center,
-                                                  spacing: 10,
+                                                      CrossAxisAlignment.start,
                                                   children: [
-                                                    Text(
-                                                      s['nombre'] ?? '—',
-                                                      style: const TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: Color(
-                                                          0xFF0F172A,
+                                                    Wrap(
+                                                      crossAxisAlignment:
+                                                          WrapCrossAlignment
+                                                              .center,
+                                                      spacing: 10,
+                                                      children: [
+                                                        Text(
+                                                          s['nombre'] ?? '—',
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 16,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Color(
+                                                                  0xFF0F172A,
+                                                                ),
+                                                              ),
                                                         ),
-                                                      ),
-                                                    ),
-                                                    Container(
-                                                      padding:
-                                                          const EdgeInsets.symmetric(
-                                                            horizontal: 10,
-                                                            vertical: 4,
-                                                          ),
-                                                      decoration: BoxDecoration(
-                                                        color: _bgEstado(
-                                                          s['estado'] ?? '',
-                                                        ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              20,
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 10,
+                                                                vertical: 4,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color: _bgEstado(
+                                                              s['estado'] ?? '',
                                                             ),
-                                                      ),
-                                                      child: Text(
-                                                        s['estado'] ?? '—',
-                                                        style: TextStyle(
-                                                          fontSize: 11,
-                                                          color: _colorEstado(
-                                                            s['estado'] ?? '',
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  20,
+                                                                ),
                                                           ),
-                                                          fontWeight:
-                                                              FontWeight.w600,
+                                                          child: Text(
+                                                            s['estado'] ?? '—',
+                                                            style: TextStyle(
+                                                              fontSize: 11,
+                                                              color: _colorEstado(
+                                                                s['estado'] ??
+                                                                    '',
+                                                              ),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        // Badge tipo de dias (Normal / Progresivo)
+                                                        Container(
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                horizontal: 10,
+                                                                vertical: 4,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                (s['tipo_dias'] ==
+                                                                    'progresivo')
+                                                                ? const Color(
+                                                                    0xFFEDE9FE,
+                                                                  )
+                                                                : const Color(
+                                                                    0xFFDBEAFE,
+                                                                  ),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  20,
+                                                                ),
+                                                          ),
+                                                          child: Text(
+                                                            (s['tipo_dias'] ==
+                                                                    'progresivo')
+                                                                ? 'Progresivo'
+                                                                : 'Normal',
+                                                            style: TextStyle(
+                                                              fontSize: 11,
+                                                              color:
+                                                                  (s['tipo_dias'] ==
+                                                                      'progresivo')
+                                                                  ? const Color(
+                                                                      0xFF7C3AED,
+                                                                    )
+                                                                  : const Color(
+                                                                      0xFF0284C7,
+                                                                    ),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    Text(
+                                                      'Cargo: ${s['cargo'] ?? '—'}',
+                                                      style: const TextStyle(
+                                                        fontSize: 13,
+                                                        color: Color(
+                                                          0xFF475569,
                                                         ),
                                                       ),
                                                     ),
                                                   ],
                                                 ),
-                                                const SizedBox(height: 8),
-                                                Text(
-                                                  'Cargo: ${s['cargo'] ?? '—'}',
-                                                  style: const TextStyle(
-                                                    fontSize: 13,
-                                                    color: Color(0xFF475569),
+                                              ),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  const Text(
+                                                    'Fecha solicitud:',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Color(0xFF64748B),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    s['fecha_solicitud'] ?? '—',
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Color(0xFF0F172A),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 16),
+
+                                          // Datos solicitud
+                                          Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color: const Color(0xFFE2E8F0),
+                                              ),
+                                            ),
+                                            child: Wrap(
+                                              runSpacing: 12,
+                                              spacing: 24,
+                                              children: [
+                                                _Dato(
+                                                  titulo: 'Periodo:',
+                                                  valor:
+                                                      '${s['fecha_inicio']} - ${s['fecha_fin']}',
+                                                ),
+                                                _Dato(
+                                                  titulo: 'Dias habiles:',
+                                                  valor:
+                                                      '${s['dias_habiles']} dias',
+                                                ),
+                                                _Dato(
+                                                  titulo:
+                                                      'Saldo actual (${(s['tipo_dias'] == 'progresivo') ? 'progresivo' : 'normal'}):',
+                                                  valor:
+                                                      '${s['saldo_actual']} dias',
+                                                ),
+                                                _Dato(
+                                                  titulo: 'Saldo despues:',
+                                                  valor:
+                                                      '${s['saldo_despues']} dias',
+                                                ),
+                                                if (s['observacion'] != null &&
+                                                    s['observacion']
+                                                        .toString()
+                                                        .isNotEmpty)
+                                                  _Dato(
+                                                    titulo: 'Observacion:',
+                                                    valor: s['observacion'],
+                                                  ),
+                                                if (s['fecha_decision'] != null)
+                                                  _Dato(
+                                                    titulo: 'Fecha decision:',
+                                                    valor: s['fecha_decision'],
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+
+                                          // Botones si esta expandida y pendiente
+                                          if (expandida && pendiente) ...[
+                                            const SizedBox(height: 16),
+                                            const Text(
+                                              'Observacion (opcional para aprobar, obligatoria para rechazar - minimo 10 caracteres):',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Color(0xFF0F172A),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            TextField(
+                                              controller: _obsControllers[id],
+                                              maxLines: 3,
+                                              maxLength: 500,
+                                              decoration: InputDecoration(
+                                                hintText:
+                                                    'Ingrese observacion...',
+                                                filled: true,
+                                                fillColor: const Color(
+                                                  0xFFF8FAFC,
+                                                ),
+                                                contentPadding:
+                                                    const EdgeInsets.all(14),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      borderSide:
+                                                          const BorderSide(
+                                                            color: Color(
+                                                              0xFFCBD5E1,
+                                                            ),
+                                                          ),
+                                                    ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
+                                                      borderSide:
+                                                          const BorderSide(
+                                                            color: Color(
+                                                              0xFF3B82F6,
+                                                            ),
+                                                            width: 1.4,
+                                                          ),
+                                                    ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: SizedBox(
+                                                    height: 48,
+                                                    child: ElevatedButton.icon(
+                                                      onPressed: proc
+                                                          ? null
+                                                          : () => _decidir(
+                                                              s,
+                                                              'Aprobada',
+                                                            ),
+                                                      icon: proc
+                                                          ? const SizedBox(
+                                                              width: 16,
+                                                              height: 16,
+                                                              child:
+                                                                  CircularProgressIndicator(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    strokeWidth:
+                                                                        2,
+                                                                  ),
+                                                            )
+                                                          : const Icon(
+                                                              Icons.check,
+                                                              size: 18,
+                                                            ),
+                                                      label: const Text(
+                                                        'Aprobar Solicitud',
+                                                      ),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            const Color(
+                                                              0xFF0F9F8F,
+                                                            ),
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 14),
+                                                Expanded(
+                                                  child: SizedBox(
+                                                    height: 48,
+                                                    child: ElevatedButton.icon(
+                                                      onPressed: proc
+                                                          ? null
+                                                          : () => _decidir(
+                                                              s,
+                                                              'Rechazada',
+                                                            ),
+                                                      icon: const Icon(
+                                                        Icons.close,
+                                                        size: 18,
+                                                      ),
+                                                      label: const Text(
+                                                        'Rechazar Solicitud',
+                                                      ),
+                                                      style: ElevatedButton.styleFrom(
+                                                        backgroundColor:
+                                                            const Color(
+                                                              0xFFEF4444,
+                                                            ),
+                                                        foregroundColor:
+                                                            Colors.white,
+                                                        elevation: 0,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                          ),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.end,
-                                            children: [
-                                              const Text(
-                                                'Fecha solicitud:',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Color(0xFF64748B),
+                                          ],
+
+                                          // Boton descargar recibo si aprobada
+                                          if (expandida &&
+                                              s['estado'] == 'Aprobada') ...[
+                                            const SizedBox(height: 16),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              height: 44,
+                                              child: ElevatedButton.icon(
+                                                onPressed: () => _descargarPDF(
+                                                  id,
+                                                  s['nombre'] ?? '',
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.picture_as_pdf_outlined,
+                                                  size: 18,
+                                                ),
+                                                label: const Text(
+                                                  'Descargar Recibo PDF',
+                                                ),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: const Color(
+                                                    0xFF1D4ED8,
+                                                  ),
+                                                  foregroundColor: Colors.white,
+                                                  elevation: 0,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
                                                 ),
                                               ),
-                                              Text(
-                                                s['fecha_solicitud'] ?? '—',
-                                                style: const TextStyle(
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF0F172A),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                            ),
+                                          ],
                                         ],
                                       ),
-                                      const SizedBox(height: 16),
-
-                                      // Datos solicitud
-                                      Container(
-                                        width: double.infinity,
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          border: Border.all(
-                                            color: const Color(0xFFE2E8F0),
-                                          ),
-                                        ),
-                                        child: Wrap(
-                                          runSpacing: 12,
-                                          spacing: 24,
-                                          children: [
-                                            _Dato(
-                                              titulo: 'Periodo:',
-                                              valor:
-                                                  '${s['fecha_inicio']} - ${s['fecha_fin']}',
-                                            ),
-                                            _Dato(
-                                              titulo: 'Dias habiles:',
-                                              valor:
-                                                  '${s['dias_habiles']} dias',
-                                            ),
-                                            _Dato(
-                                              titulo: 'Saldo actual:',
-                                              valor:
-                                                  '${s['saldo_actual']} dias',
-                                            ),
-                                            _Dato(
-                                              titulo: 'Saldo despues:',
-                                              valor:
-                                                  '${s['saldo_despues']} dias',
-                                            ),
-                                            if (s['observacion'] != null &&
-                                                s['observacion']
-                                                    .toString()
-                                                    .isNotEmpty)
-                                              _Dato(
-                                                titulo: 'Observacion:',
-                                                valor: s['observacion'],
-                                              ),
-                                            if (s['fecha_decision'] != null)
-                                              _Dato(
-                                                titulo: 'Fecha decision:',
-                                                valor: s['fecha_decision'],
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // Botones si esta expandida y pendiente
-                                      if (expandida && pendiente) ...[
-                                        const SizedBox(height: 16),
-                                        const Text(
-                                          'Observacion (opcional para aprobar, obligatoria para rechazar - minimo 10 caracteres):',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Color(0xFF0F172A),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        TextField(
-                                          controller: _obsControllers[id],
-                                          maxLines: 3,
-                                          maxLength: 500,
-                                          decoration: InputDecoration(
-                                            hintText: 'Ingrese observacion...',
-                                            filled: true,
-                                            fillColor: const Color(0xFFF8FAFC),
-                                            contentPadding:
-                                                const EdgeInsets.all(14),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              borderSide: const BorderSide(
-                                                color: Color(0xFFCBD5E1),
-                                              ),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              borderSide: const BorderSide(
-                                                color: Color(0xFF3B82F6),
-                                                width: 1.4,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 48,
-                                                child: ElevatedButton.icon(
-                                                  onPressed: proc
-                                                      ? null
-                                                      : () => _decidir(
-                                                          s,
-                                                          'Aprobada',
-                                                        ),
-                                                  icon: proc
-                                                      ? const SizedBox(
-                                                          width: 16,
-                                                          height: 16,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                                color: Colors
-                                                                    .white,
-                                                                strokeWidth: 2,
-                                                              ),
-                                                        )
-                                                      : const Icon(
-                                                          Icons.check,
-                                                          size: 18,
-                                                        ),
-                                                  label: const Text(
-                                                    'Aprobar Solicitud',
-                                                  ),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        const Color(0xFF0F9F8F),
-                                                    foregroundColor:
-                                                        Colors.white,
-                                                    elevation: 0,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 14),
-                                            Expanded(
-                                              child: SizedBox(
-                                                height: 48,
-                                                child: ElevatedButton.icon(
-                                                  onPressed: proc
-                                                      ? null
-                                                      : () => _decidir(
-                                                          s,
-                                                          'Rechazada',
-                                                        ),
-                                                  icon: const Icon(
-                                                    Icons.close,
-                                                    size: 18,
-                                                  ),
-                                                  label: const Text(
-                                                    'Rechazar Solicitud',
-                                                  ),
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        const Color(0xFFEF4444),
-                                                    foregroundColor:
-                                                        Colors.white,
-                                                    elevation: 0,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-
-                                      // Boton descargar recibo si aprobada
-                                      if (expandida &&
-                                          s['estado'] == 'Aprobada') ...[
-                                        const SizedBox(height: 16),
-                                        SizedBox(
-                                          width: double.infinity,
-                                          height: 44,
-                                          child: ElevatedButton.icon(
-                                            onPressed: () => _descargarPDF(
-                                              id,
-                                              s['nombre'] ?? '',
-                                            ),
-                                            icon: const Icon(
-                                              Icons.picture_as_pdf_outlined,
-                                              size: 18,
-                                            ),
-                                            label: const Text(
-                                              'Descargar Recibo PDF',
-                                            ),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: const Color(
-                                                0xFF1D4ED8,
-                                              ),
-                                              foregroundColor: Colors.white,
-                                              elevation: 0,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                    ],
+                                );
+                              }).toList(),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
