@@ -25,7 +25,7 @@ class _RegistrarBonosState extends State<RegistrarBonos> {
           ),
         ),
       ),
-      
+
       // 3. CONTENIDO PRINCIPAL (Tu código original)
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
