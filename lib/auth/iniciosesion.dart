@@ -159,7 +159,7 @@ class _SessionGuardState extends State<SessionGuard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Su sesión se cerrará en 2 minutos por inactividad',
+                  'Su sesión se cerrará en los próximos 2 minutos',
                   style: TextStyle(fontSize: 14, color: Color(0xFF475569)),
                   textAlign: TextAlign.center,
                 ),

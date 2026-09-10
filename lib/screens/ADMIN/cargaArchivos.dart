@@ -50,11 +50,17 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Row(children: [
-              Icon(Icons.error_outline, color: Colors.white),
-              SizedBox(width: 10),
-              Expanded(child: Text('Formato incorrecto. Solo se permiten archivos .zip')),
-            ]),
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Formato incorrecto. Solo se permiten archivos .zip',
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
@@ -65,23 +71,25 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
 
     setState(() {
       _nombreArchivo = archivo.name;
-      _archivoBytes  = archivo.bytes;
-      _procesados    = null;
-      _errores       = null;
+      _archivoBytes = archivo.bytes;
+      _procesados = null;
+      _errores = null;
       _detalleProcessados = [];
-      _detalleErrores     = [];
-      _exito  = null;
+      _detalleErrores = [];
+      _exito = null;
       _mensaje = '';
     });
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white),
-            const SizedBox(width: 10),
-            Text('Archivo seleccionado: ${archivo.name}'),
-          ]),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Text('Archivo seleccionado: ${archivo.name}'),
+            ],
+          ),
           backgroundColor: const Color(0xFF0F9F8F),
         ),
       );
@@ -263,90 +271,110 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
         ),
       ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Titulo
-                const Text(
-                  'Carga Masiva de Archivos',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Sube un archivo comprimido (.zip) con las liquidaciones de sueldo de los trabajadores.',
-                  style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: 32),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final ancho = constraints.maxWidth;
+          final bool esEscritorio = ancho >= 1280;
+          final bool esTablet = ancho >= 768 && ancho < 1280;
+          final double paddingHorizontal = esEscritorio
+              ? 40
+              : (esTablet ? 28 : 16);
+          final double maxWidthContenido = esEscritorio
+              ? 900
+              : (esTablet ? 700 : double.infinity);
 
-                // Requisitos
-                const _RequisitosArchivoCard(),
-                const SizedBox(height: 32),
-
-                // Zona de carga
-                _ZonaCargaArchivo(
-                  nombreArchivo: _nombreArchivo,
-                  onSeleccionar: _seleccionarArchivoZip,
-                ),
-                const SizedBox(height: 32),
-
-                // Boton subir
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: _subiendo ? null : _subirArchivo,
-                    icon: _subiendo
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                        : const Icon(Icons.cloud_upload),
-                    label: Text(
-                      _subiendo ? 'Procesando...' : 'Subir Archivo al Sistema',
-                      style: const TextStyle(
-                        fontSize: 16,
+          return SizedBox(
+            width: double.infinity,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: paddingHorizontal,
+                vertical: 32,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidthContenido),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Titulo
+                    const Text(
+                      'Carga Masiva de Archivos',
+                      style: TextStyle(
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF001E42),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Sube un archivo comprimido (.zip) con las liquidaciones de sueldo de los trabajadores.',
+                      style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
-                // Resultado
-                if (_exito != null)
-                  _ResultadoCarga(
-                    exito: _exito!,
-                    mensaje: _mensaje,
-                    procesados: _procesados ?? 0,
-                    errores: _errores ?? 0,
-                    detalleProcessados: _detalleProcessados,
-                    detalleErrores: _detalleErrores,
-                  ),
-              ],
+                    // Requisitos
+                    const _RequisitosArchivoCard(),
+                    const SizedBox(height: 32),
+
+                    // Zona de carga
+                    _ZonaCargaArchivo(
+                      nombreArchivo: _nombreArchivo,
+                      onSeleccionar: _seleccionarArchivoZip,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Boton subir
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: _subiendo ? null : _subirArchivo,
+                        icon: _subiendo
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Icon(Icons.cloud_upload),
+                        label: Text(
+                          _subiendo
+                              ? 'Procesando...'
+                              : 'Subir Archivo al Sistema',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF001E42),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Resultado
+                    if (_exito != null)
+                      _ResultadoCarga(
+                        exito: _exito!,
+                        mensaje: _mensaje,
+                        procesados: _procesados ?? 0,
+                        errores: _errores ?? 0,
+                        detalleProcessados: _detalleProcessados,
+                        detalleErrores: _detalleErrores,
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

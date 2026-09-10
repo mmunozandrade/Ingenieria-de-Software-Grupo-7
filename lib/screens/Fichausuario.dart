@@ -24,11 +24,11 @@ class _FichaUsuarioState extends State<FichaUsuario> {
   bool _guardando = false;
   String _mensaje = '';
   bool _exito = false;
-  String _afp              = '';
-  int    _mesesPrevios     = 0;
-  int    _mesesClinica     = 0;
-  int    _totalMeses       = 0;
-  bool   _cumpleProgresivos = false;
+  String _afp = '';
+  int _mesesPrevios = 0;
+  int _mesesClinica = 0;
+  int _totalMeses = 0;
+  bool _cumpleProgresivos = false;
   @override
   void initState() {
     super.initState();
@@ -54,13 +54,13 @@ class _FichaUsuarioState extends State<FichaUsuario> {
           _correo = data['correo'] ?? '';
           _telefonoController.text = data['telefono'] ?? '';
           _direccionController.text = data['direccion'] ?? '';
-          _afp          = data['afp'] ?? '';
+          _afp = data['afp'] ?? '';
           _mesesPrevios = data['meses_cotizados_previos'] ?? 0;
 
           // Calcular meses en clinica
           final fechaStr = data['fecha_ingreso'];
           if (fechaStr != null) {
-            final fi  = DateTime.tryParse(fechaStr);
+            final fi = DateTime.tryParse(fechaStr);
             if (fi != null) {
               final hoy = DateTime.now();
               int m = (hoy.year - fi.year) * 12 + (hoy.month - fi.month);
@@ -68,7 +68,7 @@ class _FichaUsuarioState extends State<FichaUsuario> {
               _mesesClinica = m < 0 ? 0 : m;
             }
           }
-          _totalMeses        = _mesesPrevios.clamp(0, 120) + _mesesClinica;
+          _totalMeses = _mesesPrevios.clamp(0, 120) + _mesesClinica;
           _cumpleProgresivos = _totalMeses >= 120;
         });
       }
@@ -133,312 +133,357 @@ class _FichaUsuarioState extends State<FichaUsuario> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: _cargando
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF001E42)),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // ── LOGO GRANDE CENTRADO ──────────────────
-                  Container(
-                    width: 180,
-                    height: 140,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFFE2E8F0),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Image.asset('assets/Logo.png', fit: BoxFit.contain),
-                  ),
-                  const SizedBox(height: 28),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final ancho = constraints.maxWidth;
+          final bool esEscritorio = ancho >= 1280;
+          final bool esTablet = ancho >= 768 && ancho < 1280;
+          final double paddingHorizontal = esEscritorio
+              ? 40
+              : (esTablet ? 28 : 16);
+          final double maxWidthContenido = esEscritorio
+              ? 900
+              : (esTablet ? 700 : double.infinity);
 
-                  // ── DATOS PERSONALES (solo lectura) ───────
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+          return _cargando
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF001E42)),
+                )
+              : SizedBox(
+                  width: double.infinity,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: paddingHorizontal,
+                      vertical: 24,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Datos Personales',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Color(0xFF001E42),
-                          ),
-                        ),
-                        const Divider(height: 20),
-                        _buildDatoLectura(
-                          icono: Icons.person_outline,
-                          label: 'Nombre Completo',
-                          valor: _nombreCompleto,
-                        ),
-                        const SizedBox(height: 14),
-                        _buildDatoLectura(
-                          icono: Icons.badge_outlined,
-                          label: 'RUT',
-                          valor: _rut,
-                        ),
-                        const SizedBox(height: 14),
-                        _buildDatoLectura(
-                          icono: Icons.email_outlined,
-                          label: 'Correo Institucional',
-                          valor: _correo,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-        
-                  // PREVISION - solo lectura
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Prevision y Cotizaciones',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: Color(0xFF001E42))),
-                        const Divider(height: 20),
-                        _buildDatoLectura(
-                          icono: Icons.account_balance_outlined,
-                          label: 'AFP',
-                          valor: _afp.isEmpty ? 'No registrada' : _afp,
-                        ),
-                        const SizedBox(height: 14),
-                        _buildDatoLectura(
-                          icono: Icons.history_edu_outlined,
-                          label: 'Meses cotizados previos',
-                          valor: '$_mesesPrevios meses',
-                        ),
-                        const SizedBox(height: 14),
-                        _buildDatoLectura(
-                          icono: Icons.work_history_outlined,
-                          label: 'Meses en la clinica',
-                          valor: '$_mesesClinica meses (${_mesesClinica ~/ 12} anos)',
-                        ),
-                        const SizedBox(height: 14),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: _cumpleProgresivos
-                                ? const Color(0xFFE6FFFB)
-                                : const Color(0xFFFFF7ED),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _cumpleProgresivos
-                                  ? const Color(0xFF5EEAD4)
-                                  : const Color(0xFFFBBF24),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidthContenido),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // ── LOGO GRANDE CENTRADO ──────────────────
+                          Container(
+                            width: 180,
+                            height: 140,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Image.asset(
+                              'assets/Logo.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
-                          child: Row(children: [
-                            Icon(
-                              _cumpleProgresivos
-                                  ? Icons.check_circle_outline
-                                  : Icons.info_outline,
-                              color: _cumpleProgresivos
-                                  ? const Color(0xFF0D9488)
-                                  : const Color(0xFFF59E0B),
-                              size: 18,
+                          const SizedBox(height: 28),
+
+                          // ── DATOS PERSONALES (solo lectura) ───────
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _cumpleProgresivos
-                                    ? 'Total: $_totalMeses meses — Cumple Art. 68 (dias progresivos)'
-                                    : 'Total: $_totalMeses meses — Faltan ${120 - _totalMeses} meses para dias progresivos',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _cumpleProgresivos
-                                      ? const Color(0xFF0D9488)
-                                      : const Color(0xFFF59E0B),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Datos Personales',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Color(0xFF001E42),
+                                  ),
+                                ),
+                                const Divider(height: 20),
+                                _buildDatoLectura(
+                                  icono: Icons.person_outline,
+                                  label: 'Nombre Completo',
+                                  valor: _nombreCompleto,
+                                ),
+                                const SizedBox(height: 14),
+                                _buildDatoLectura(
+                                  icono: Icons.badge_outlined,
+                                  label: 'RUT',
+                                  valor: _rut,
+                                ),
+                                const SizedBox(height: 14),
+                                _buildDatoLectura(
+                                  icono: Icons.email_outlined,
+                                  label: 'Correo Institucional',
+                                  valor: _correo,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // PREVISION - solo lectura
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Prevision y Cotizaciones',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Color(0xFF001E42),
+                                  ),
+                                ),
+                                const Divider(height: 20),
+                                _buildDatoLectura(
+                                  icono: Icons.account_balance_outlined,
+                                  label: 'AFP',
+                                  valor: _afp.isEmpty ? 'No registrada' : _afp,
+                                ),
+                                const SizedBox(height: 14),
+                                _buildDatoLectura(
+                                  icono: Icons.history_edu_outlined,
+                                  label: 'Meses cotizados previos',
+                                  valor: '$_mesesPrevios meses',
+                                ),
+                                const SizedBox(height: 14),
+                                _buildDatoLectura(
+                                  icono: Icons.work_history_outlined,
+                                  label: 'Meses en la clinica',
+                                  valor:
+                                      '$_mesesClinica meses (${_mesesClinica ~/ 12} anos)',
+                                ),
+                                const SizedBox(height: 14),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: _cumpleProgresivos
+                                        ? const Color(0xFFE6FFFB)
+                                        : const Color(0xFFFFF7ED),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: _cumpleProgresivos
+                                          ? const Color(0xFF5EEAD4)
+                                          : const Color(0xFFFBBF24),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _cumpleProgresivos
+                                            ? Icons.check_circle_outline
+                                            : Icons.info_outline,
+                                        color: _cumpleProgresivos
+                                            ? const Color(0xFF0D9488)
+                                            : const Color(0xFFF59E0B),
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _cumpleProgresivos
+                                              ? 'Total: $_totalMeses meses — Cumple Art. 68 (dias progresivos)'
+                                              : 'Total: $_totalMeses meses — Faltan ${120 - _totalMeses} meses para dias progresivos',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: _cumpleProgresivos
+                                                ? const Color(0xFF0D9488)
+                                                : const Color(0xFFF59E0B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // ── DATOS EDITABLES ───────────────────────
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Datos que puedes actualizar',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Color(0xFF001E42),
+                                  ),
+                                ),
+                                const Divider(height: 20),
+
+                                // Teléfono
+                                const Text(
+                                  'Teléfono',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                TextField(
+                                  controller: _telefonoController,
+                                  keyboardType: TextInputType.phone,
+                                  decoration: InputDecoration(
+                                    hintText: 'Ej: 912345678',
+                                    prefixIcon: const Icon(
+                                      Icons.phone_outlined,
+                                      color: Colors.grey,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Dirección
+                                const Text(
+                                  'Dirección',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                TextField(
+                                  controller: _direccionController,
+                                  keyboardType: TextInputType.streetAddress,
+                                  maxLines: 2,
+                                  decoration: InputDecoration(
+                                    hintText:
+                                        'Ej: Av. Los Andes 1234, Los Andes',
+                                    prefixIcon: const Icon(
+                                      Icons.home_outlined,
+                                      color: Colors.grey,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // ── MENSAJE ÉXITO / ERROR ─────────────────
+                          if (_mensaje.isNotEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: _exito
+                                    ? Colors.green[50]
+                                    : Colors.red[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _exito
+                                      ? Colors.green[200]!
+                                      : Colors.red[200]!,
                                 ),
                               ),
-                            ),
-                          ]),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ── DATOS EDITABLES ───────────────────────
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Datos que puedes actualizar',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Color(0xFF001E42),
-                          ),
-                        ),
-                        const Divider(height: 20),
-
-                        // Teléfono
-                        const Text(
-                          'Teléfono',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: Color(0xFF475569),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: _telefonoController,
-                          keyboardType: TextInputType.phone,
-                          decoration: InputDecoration(
-                            hintText: 'Ej: 912345678',
-                            prefixIcon: const Icon(
-                              Icons.phone_outlined,
-                              color: Colors.grey,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Dirección
-                        const Text(
-                          'Dirección',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: Color(0xFF475569),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextField(
-                          controller: _direccionController,
-                          keyboardType: TextInputType.streetAddress,
-                          maxLines: 2,
-                          decoration: InputDecoration(
-                            hintText: 'Ej: Av. Los Andes 1234, Los Andes',
-                            prefixIcon: const Icon(
-                              Icons.home_outlined,
-                              color: Colors.grey,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ── MENSAJE ÉXITO / ERROR ─────────────────
-                  if (_mensaje.isNotEmpty)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: _exito ? Colors.green[50] : Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: _exito ? Colors.green[200]! : Colors.red[200]!,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            _exito
-                                ? Icons.check_circle_outline
-                                : Icons.error_outline,
-                            color: _exito ? Colors.green : Colors.red,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _mensaje,
-                              style: TextStyle(
-                                color: _exito ? Colors.green : Colors.red,
-                                fontSize: 13,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _exito
+                                        ? Icons.check_circle_outline
+                                        : Icons.error_outline,
+                                    color: _exito ? Colors.green : Colors.red,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _mensaje,
+                                      style: TextStyle(
+                                        color: _exito
+                                            ? Colors.green
+                                            : Colors.red,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+
+                          // ── BOTÓN GUARDAR ─────────────────────────
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _guardando ? null : _guardarCambios,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF001E42),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: _guardando
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Actualizar Datos Personales',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                             ),
                           ),
                         ],
                       ),
                     ),
-
-                  // ── BOTÓN GUARDAR ─────────────────────────
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _guardando ? null : _guardarCambios,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF001E42),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: _guardando
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : const Text(
-                              'Actualizar Datos Personales',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
                   ),
-                ],
-              ),
-            ),
+                );
+        },
+      ),
     );
   }
 

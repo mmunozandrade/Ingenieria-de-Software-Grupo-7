@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../auth/session_service.dart';
 
 const String _apiUrlPend = 'http://127.0.0.1:8000';
-const int _salarioMinimoPend = 500000;
+const int _salarioMinimoPend = 553553;
 
 const List<String> _afpListPend = [
   'AFP Capital',
@@ -20,6 +20,7 @@ const List<String> _tiposContratoPend = [
   'Indefinido',
   'Plazo fijo',
   'Por obra',
+  'Honorario',
 ];
 const List<String> _institucionesPend = ['Fonasa', 'Isapre'];
 
@@ -98,189 +99,217 @@ class _CuentasPendientesState extends State<CuentasPendientes> {
           ),
         ],
       ),
-      body: _cargando
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF001E42)),
-            )
-          : _error.isNotEmpty
-          ? Center(
-              child: Text(_error, style: const TextStyle(color: Colors.red)),
-            )
-          : Column(
-              children: [
-                // Banner informativo
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  color: const Color(0xFFFFFBEB),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: Color(0xFFD97706),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Estas cuentas fueron creadas por los trabajadores pero aun no tienen datos personales completos. Completa su informacion para que puedan usar el sistema.',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF92400E),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final ancho = constraints.maxWidth;
+          final bool esEscritorio = ancho >= 1280;
+          final bool esTablet = ancho >= 768 && ancho < 1280;
+          final double paddingHorizontal = esEscritorio
+              ? 40
+              : (esTablet ? 28 : 16);
 
-                // Lista
-                Expanded(
-                  child: _cuentas.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.check_circle_outline,
-                                size: 56,
-                                color: Color(0xFF0D9488),
-                              ),
-                              SizedBox(height: 12),
-                              Text(
-                                'No hay cuentas pendientes',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Todas las cuentas tienen datos completos',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF94A3B8),
-                                ),
-                              ),
-                            ],
+          return _cargando
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF001E42)),
+                )
+              : _error.isNotEmpty
+              ? Center(
+                  child: Text(
+                    _error,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                )
+              : Column(
+                  children: [
+                    // Banner informativo
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: paddingHorizontal,
+                        vertical: 16,
+                      ),
+                      color: const Color(0xFFFFFBEB),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Color(0xFFD97706),
+                            size: 20,
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _cuentas.length,
-                          itemBuilder: (context, index) {
-                            final c = _cuentas[index];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.03),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Estas cuentas fueron creadas por los trabajadores pero aun no tienen datos personales completos. Completa su informacion para que puedan usar el sistema.',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF92400E),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Lista
+                    Expanded(
+                      child: _cuentas.isEmpty
+                          ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle_outline,
+                                    size: 56,
+                                    color: Color(0xFF0D9488),
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'No hay cuentas pendientes',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Todas las cuentas tienen datos completos',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF94A3B8),
+                                    ),
                                   ),
                                 ],
                               ),
-                              child: Row(
-                                children: [
-                                  // Avatar
-                                  CircleAvatar(
-                                    radius: 22,
-                                    backgroundColor: const Color(0xFFFEF3C7),
-                                    child: const Icon(
-                                      Icons.person_outline,
-                                      color: Color(0xFFD97706),
-                                      size: 22,
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _cuentas.length,
+                              itemBuilder: (context, index) {
+                                final c = _cuentas[index];
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFFE2E8F0),
                                     ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.03),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 14),
-
-                                  // Info
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          c['correo'] ?? '—',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF0F172A),
-                                          ),
+                                  child: Row(
+                                    children: [
+                                      // Avatar
+                                      CircleAvatar(
+                                        radius: 22,
+                                        backgroundColor: const Color(
+                                          0xFFFEF3C7,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Row(
+                                        child: const Icon(
+                                          Icons.person_outline,
+                                          color: Color(0xFFD97706),
+                                          size: 22,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 14),
+
+                                      // Info
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFFEF3C7),
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              ),
-                                              child: Text(
-                                                'Sin datos personales',
-                                                style: const TextStyle(
-                                                  fontSize: 11,
-                                                  color: Color(0xFF92400E),
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                            Text(
+                                              c['correo'] ?? '—',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFF0F172A),
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Rol: ${c['rol'] ?? '—'}',
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Color(0xFF64748B),
-                                              ),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 2,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                      0xFFFEF3C7,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          20,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    'Sin datos personales',
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: Color(0xFF92400E),
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Rol: ${c['rol'] ?? '—'}',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Color(0xFF64748B),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
-                                      ],
-                                    ),
-                                  ),
+                                      ),
 
-                                  // Boton
-                                  ElevatedButton.icon(
-                                    onPressed: () => _abrirFormulario(c),
-                                    icon: const Icon(
-                                      Icons.edit_outlined,
-                                      size: 16,
-                                    ),
-                                    label: const Text('Completar'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF001E42),
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 10,
+                                      // Boton
+                                      ElevatedButton.icon(
+                                        onPressed: () => _abrirFormulario(c),
+                                        icon: const Icon(
+                                          Icons.edit_outlined,
+                                          size: 16,
+                                        ),
+                                        label: const Text('Completar'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(
+                                            0xFF001E42,
+                                          ),
+                                          foregroundColor: Colors.white,
+                                          elevation: 0,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 10,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                        ),
                                       ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+        },
+      ),
     );
   }
 }
@@ -383,14 +412,14 @@ class _FormularioCompletarCuentaState
       });
       return;
     }
-    if (_salud == null) {
+    if (_salud == null && _tipoContrato != 'Honorario') {
       setState(() {
         _exito = false;
         _mensaje = 'Debes seleccionar la institucion de salud';
       });
       return;
     }
-    if (_afp == null) {
+    if (_afp == null && _tipoContrato != 'Honorario') {
       setState(() {
         _exito = false;
         _mensaje = 'Debes seleccionar la AFP';
@@ -401,6 +430,13 @@ class _FormularioCompletarCuentaState
       setState(() {
         _exito = false;
         _mensaje = 'Debes seleccionar el tipo de contrato';
+      });
+      return;
+    }
+    if (_tipoContrato != 'Honorario' && _cargoCtrl.text.trim().isEmpty) {
+      setState(() {
+        _exito = false;
+        _mensaje = 'Debes ingresar el cargo';
       });
       return;
     }
@@ -420,12 +456,14 @@ class _FormularioCompletarCuentaState
         'apellido_materno': _apMaternoCtrl.text.trim(),
         'telefono': _telefonoCtrl.text.trim(),
         'direccion': _direccionCtrl.text.trim(),
-        'tipo_salud': _salud!,
-        'afp': _afp!,
-        'cargo': _cargoCtrl.text.trim(),
+        'tipo_salud': _tipoContrato == 'Honorario' ? null : _salud!,
+        'afp': _tipoContrato == 'Honorario' ? null : _afp!,
+        'cargo': _tipoContrato == 'Honorario' ? null : _cargoCtrl.text.trim(),
         'tipo_contrato': _tipoContrato!,
         'fecha_ingreso': _fechaIngreso!.toIso8601String().split('T')[0],
-        'sueldo_base': int.parse(_sueldoCtrl.text.trim()),
+        'sueldo_base': _tipoContrato == 'Honorario'
+            ? null
+            : int.parse(_sueldoCtrl.text.trim()),
         'discapacidad': _discapacidadCtrl.text.trim(),
         if (_fechaNacimiento != null)
           'fecha_nacimiento': _fechaNacimiento!.toIso8601String().split('T')[0],
@@ -649,25 +687,63 @@ class _FormularioCompletarCuentaState
                   Row(
                     children: [
                       Expanded(
-                        child: _DropDown(
-                          label: 'Institucion de salud *',
-                          value: _salud,
-                          items: _institucionesPend,
-                          onChanged: (v) => setState(() => _salud = v),
-                          validator: (v) =>
-                              v == null ? 'Selecciona una opcion' : null,
-                        ),
+                        child: _tipoContrato == 'Honorario'
+                            ? Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFBFDBFE),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'No se solicita institución de salud para contrato Honorario: no cotiza salud a través de la clínica.',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: Color(0xFF1E40AF),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              )
+                            : _DropDown(
+                                label: 'Institucion de salud *',
+                                value: _salud,
+                                items: _institucionesPend,
+                                onChanged: (v) => setState(() => _salud = v),
+                                validator: (v) =>
+                                    v == null ? 'Selecciona una opcion' : null,
+                              ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _DropDown(
-                          label: 'AFP *',
-                          value: _afp,
-                          items: _afpListPend,
-                          onChanged: (v) => setState(() => _afp = v),
-                          validator: (v) =>
-                              v == null ? 'Selecciona una opcion' : null,
-                        ),
+                        child: _tipoContrato == 'Honorario'
+                            ? Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFBFDBFE),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'No se solicita AFP para contrato Honorario: no cotiza previsión a través de la clínica.',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: Color(0xFF1E40AF),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              )
+                            : _DropDown(
+                                label: 'AFP *',
+                                value: _afp,
+                                items: _afpListPend,
+                                onChanged: (v) => setState(() => _afp = v),
+                                validator: (v) =>
+                                    v == null ? 'Selecciona una opcion' : null,
+                              ),
                       ),
                     ],
                   ),
@@ -681,24 +757,60 @@ class _FormularioCompletarCuentaState
                   ),
                   const SizedBox(height: 16),
 
-                  _Campo(
-                    label: 'Cargo *',
-                    hint: 'Ej: Tecnico en Enfermeria',
-                    controller: _cargoCtrl,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Obligatorio';
-                      if (v.length < 2 || v.length > 100)
-                        return 'Entre 2 y 100 caracteres';
-                      return null;
-                    },
-                  ),
+                  if (_tipoContrato == 'Honorario')
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Color(0xFF1D4ED8),
+                            size: 20,
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'No se solicita cargo para contrato Honorario: presta servicios puntuales por boleta, sin un cargo formal dentro de la clínica.',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: Color(0xFF1E40AF),
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    _Campo(
+                      label: 'Cargo *',
+                      hint: 'Ej: Tecnico en Informática',
+                      controller: _cargoCtrl,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Obligatorio';
+                        if (v.length < 2 || v.length > 100)
+                          return 'Entre 2 y 100 caracteres';
+                        return null;
+                      },
+                    ),
                   const SizedBox(height: 12),
 
                   _DropDown(
                     label: 'Tipo de contrato *',
                     value: _tipoContrato,
                     items: _tiposContratoPend,
-                    onChanged: (v) => setState(() => _tipoContrato = v),
+                    onChanged: (v) => setState(() {
+                      _tipoContrato = v;
+                      if (v == 'Honorario') _sueldoCtrl.clear();
+                    }),
                     validator: (v) =>
                         v == null ? 'Selecciona una opcion' : null,
                   ),
@@ -729,21 +841,54 @@ class _FormularioCompletarCuentaState
                   ),
                   const SizedBox(height: 12),
 
-                  _Campo(
-                    label: 'Sueldo base (CLP) *',
-                    hint: 'Ej: 650000',
-                    controller: _sueldoCtrl,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Obligatorio';
-                      final n = int.tryParse(v);
-                      if (n == null) return 'Debe ser un numero entero';
-                      if (n < _salarioMinimoPend)
-                        return 'No puede ser inferior al salario minimo (\$$_salarioMinimoPend)';
-                      return null;
-                    },
-                  ),
+                  if (_tipoContrato == 'Honorario')
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Color(0xFF1D4ED8),
+                            size: 20,
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'No se solicita sueldo base para contrato Honorario: este tipo de trabajador no tiene sueldo fijo, bonos ni descuentos previsionales — se paga por boleta, usando su propio cálculo de honorarios (monto bruto menos retención de impuesto).',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: Color(0xFF1E40AF),
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    _Campo(
+                      label: 'Sueldo base (CLP) *',
+                      hint: 'Ej: 553553',
+                      controller: _sueldoCtrl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Obligatorio';
+                        final n = int.tryParse(v);
+                        if (n == null) return 'Debe ser un numero entero';
+                        if (n < _salarioMinimoPend)
+                          return 'No puede ser inferior al salario minimo (\$$_salarioMinimoPend)';
+                        return null;
+                      },
+                    ),
                   const SizedBox(height: 24),
 
                   // ── SECCION 5: OPCIONALES ───────────────
