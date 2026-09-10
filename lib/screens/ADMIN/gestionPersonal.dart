@@ -5,7 +5,6 @@ import 'cuentasPendientes.dart';
 import 'aprobarSolicitudesV.dart';
 import 'CompensacionesAdmin.dart';
 import 'desgloseLiquidacionAdmin.dart';
-import 'calculoLiquidacionWizardNuevo.dart';
 
 /// Pantalla "libro" de Gestión de Personal — punto de entrada unico
 /// a los modulos relacionados con los trabajadores y sus cuentas.
@@ -181,20 +180,6 @@ class GestionPersonalScreen extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (_) =>
                                   const DesgloseLiquidacionAdminScreen(),
-                            ),
-                          ),
-                        ),
-                        _TarjetaGestion(
-                          icono: Icons.science_outlined,
-                          color: const Color(0xFFDB2777),
-                          titulo: '[PRUEBA] Liquidación Total Nuevo',
-                          descripcion:
-                              'Versión en pruebas del wizard de liquidación, con el orden de pasos reorganizado. Temporal, mientras se valida.',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const CalculoLiquidacionWizardNuevoScreen(),
                             ),
                           ),
                         ),
