@@ -5,9 +5,7 @@ import 'cuentasPendientes.dart';
 import 'aprobarSolicitudesV.dart';
 import 'CompensacionesAdmin.dart';
 import 'desgloseLiquidacionAdmin.dart';
-import 'registroAsistencia.dart';
-import 'aprobarAnticipos.dart';
-import 'finiquitoHub.dart';
+import 'calculoLiquidacionWizardNuevo.dart';
 
 /// Pantalla "libro" de Gestión de Personal — punto de entrada unico
 /// a los modulos relacionados con los trabajadores y sus cuentas.
@@ -187,41 +185,16 @@ class GestionPersonalScreen extends StatelessWidget {
                           ),
                         ),
                         _TarjetaGestion(
-                          icono: Icons.event_note_outlined,
-                          color: const Color(0xFF16A34A),
-                          titulo: 'Registro de Asistencia',
+                          icono: Icons.science_outlined,
+                          color: const Color(0xFFDB2777),
+                          titulo: '[PRUEBA] Liquidación Total Nuevo',
                           descripcion:
-                              'Registra manualmente el estado diario de cada trabajador (presente, ausente, licencia, vacaciones o feriado) y sus horas de entrada/salida.',
+                              'Versión en pruebas del wizard de liquidación, con el orden de pasos reorganizado. Temporal, mientras se valida.',
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const RegistroAsistenciaScreen(),
-                            ),
-                          ),
-                        ),
-                        _TarjetaGestion(
-                          icono: Icons.payments_outlined,
-                          color: const Color(0xFFD97706),
-                          titulo: 'Aprobar Anticipos',
-                          descripcion:
-                              'Revisa y decide las solicitudes de anticipo de sueldo excepcional enviadas por los trabajadores.',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const AprobarAnticiposScreen(),
-                            ),
-                          ),
-                        ),
-                        _TarjetaGestion(
-                          icono: Icons.assignment_late_outlined,
-                          color: const Color(0xFFDC2626),
-                          titulo: 'Finiquito',
-                          descripcion:
-                              'Registra la terminación de un trabajador y genera su finiquito con el desglose legal completo.',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const FiniquitoHubScreen(),
+                              builder: (_) =>
+                                  const CalculoLiquidacionWizardNuevoScreen(),
                             ),
                           ),
                         ),

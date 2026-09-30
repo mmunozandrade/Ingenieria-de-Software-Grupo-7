@@ -20,9 +20,14 @@ const List<String> _afpListAdmin = [
 
 const List<String> _rolesDisponibles = ['usuario', 'jefe'];
 
-const List<String> _tiposContrato = ['Indefinido', 'Plazo fijo', 'Por obra'];
+const List<String> _tiposContrato = [
+  'Indefinido',
+  'Plazo fijo',
+  'Por obra',
+  'Honorario',
+];
 const List<String> _institucionesSalud = ['Fonasa', 'Isapre'];
-const int _salarioMinimo = 500000;
+const int _salarioMinimo = 553553;
 
 class FichaEmpleadoAdmin extends StatefulWidget {
   final Map<String, dynamic> empleado;
@@ -33,6 +38,12 @@ class FichaEmpleadoAdmin extends StatefulWidget {
 }
 
 class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
+  // Copia local mutable de los datos del empleado. La vista de solo
+  // lectura (previsualizacion) lee de aqui, NO de widget.empleado
+  // directo, ya que este ultimo es inmutable durante toda la vida
+  // de la pantalla y nunca reflejaria un guardado exitoso.
+  late Map<String, dynamic> _empleadoActual;
+
   // ── Cotizaciones / AFP ────────────────────────────────────
   final _mesesCtrl = TextEditingController();
   String? _afpSeleccionada;
@@ -49,6 +60,11 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
   int _totalMeses = 0;
   bool _cumpleProgresivos = false;
 
+  // ── Equipo (solo cuando el rol seleccionado es Jefe) ──────
+  List<dynamic> _todosLosTrabajadores = [];
+  bool _cargandoTrabajadores = false;
+  Set<int> _equipoSeleccionado = {};
+
   // ── Formulario edicion desplegable ────────────────────────
   bool _formularioVisible = false;
   bool _guardandoEdicion = false;
@@ -63,6 +79,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
   final _direccionCtrl = TextEditingController();
   final _cargoCtrl = TextEditingController();
   final _sueldoCtrl = TextEditingController();
+  final _jornadaSemanalCtrl = TextEditingController();
   final _discapacidadCtrl = TextEditingController();
   String? _saludEdicion;
   String? _tipoContratoEdicion;
@@ -72,6 +89,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
   @override
   void initState() {
     super.initState();
+    _empleadoActual = Map<String, dynamic>.from(widget.empleado);
     final previos = widget.empleado['meses_cotizados_previos'] ?? 0;
     _mesesCtrl.text = previos.toString();
     _afpSeleccionada = widget.empleado['afp'];
@@ -79,6 +97,8 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       _afpSeleccionada = null;
     }
     _rolSeleccionado = null; // Inicia vacío — Excepción 1
+    _equipoSeleccionado = {};
+    _todosLosTrabajadores = [];
     _calcularMeses();
   }
 
@@ -93,6 +113,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     _direccionCtrl.dispose();
     _cargoCtrl.dispose();
     _sueldoCtrl.dispose();
+    _jornadaSemanalCtrl.dispose();
     _discapacidadCtrl.dispose();
     super.dispose();
   }
@@ -130,7 +151,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
 
   // ── Prellenar formulario edicion ──────────────────────────
   void _abrirFormulario() {
-    final e = widget.empleado;
+    final e = _empleadoActual;
     final salud = (e['tipo_salud'] ?? e['institucion_salud'] ?? '')
         .toString()
         .trim();
@@ -142,7 +163,8 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     _telefonoCtrl.text = e['telefono'] ?? '';
     _direccionCtrl.text = e['direccion'] ?? '';
     _cargoCtrl.text = e['cargo'] ?? '';
-    _sueldoCtrl.text = e['sueldo_base']?.toString() ?? '';
+    _sueldoCtrl.text = _formatearMiles(e['sueldo_base']?.toString() ?? '');
+    _jornadaSemanalCtrl.text = e['jornada_semanal_horas']?.toString() ?? '';
     _discapacidadCtrl.text = e['discapacidad'] ?? '';
     _saludEdicion = _institucionesSalud.contains(salud) ? salud : null;
     _tipoContratoEdicion = _tiposContrato.contains(contrato) ? contrato : null;
@@ -281,6 +303,29 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     }
   }
 
+  // ── Cargar lista de trabajadores para el checklist de equipo ──
+  Future<void> _cargarTodosLosTrabajadores() async {
+    setState(() => _cargandoTrabajadores = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.get(
+        Uri.parse('$_apiUrlFichaAdmin/admin/listar-trabajadores-simple'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        setState(() => _todosLosTrabajadores = data['trabajadores'] ?? []);
+      }
+    } catch (_) {
+      // silencioso
+    } finally {
+      setState(() => _cargandoTrabajadores = false);
+    }
+  }
+
   // ── Guardar Rol ───────────────────────────────────────────
   Future<void> _guardarRol() async {
     if (_rolSeleccionado == null) {
@@ -297,19 +342,25 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     try {
       final token = await SessionService.obtenerToken();
       final idEmple = widget.empleado['id_empleado'];
+      final Map<String, dynamic> body = {'rol': _rolSeleccionado};
+      if (_rolSeleccionado == 'jefe' && _equipoSeleccionado.isNotEmpty) {
+        body['trabajadores_equipo'] = _equipoSeleccionado.toList();
+      }
       final response = await http.put(
         Uri.parse('$_apiUrlFichaAdmin/empleados/$idEmple/rol'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode({'rol': _rolSeleccionado}),
+        body: jsonEncode(body),
       );
       final data = jsonDecode(response.body);
       setState(() {
         _exitoRol = data['success'] == true;
         _mensajeRol = _exitoRol
-            ? 'Rol actualizado correctamente a "$_rolSeleccionado"'
+            ? (_rolSeleccionado == 'jefe' && _equipoSeleccionado.isNotEmpty
+                  ? 'Rol actualizado a "Jefe" y equipo asignado correctamente (${_equipoSeleccionado.length} trabajador(es))'
+                  : 'Rol actualizado correctamente a "$_rolSeleccionado"')
             : data['mensaje'] ?? 'Error al actualizar rol';
       });
     } catch (_) {
@@ -324,24 +375,57 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
 
   // ── Guardar edicion datos personales ─────────────────────
   Future<void> _guardarEdicion() async {
-    if (_primerNombreCtrl.text.trim().isEmpty ||
-        _apPaternoCtrl.text.trim().isEmpty) {
-      setState(() {
-        _exitoEdicion = false;
-        _mensajeEdicion = 'Nombre y apellido paterno son obligatorios';
-      });
-      return;
-    }
-    if (_sueldoCtrl.text.trim().isNotEmpty) {
-      final sueldo = int.tryParse(_sueldoCtrl.text.trim());
-      if (sueldo == null || sueldo < _salarioMinimo) {
+    final camposObligatorios = <String, TextEditingController>{
+      'Primer nombre': _primerNombreCtrl,
+      'Apellido paterno': _apPaternoCtrl,
+      'Apellido materno': _apMaternoCtrl,
+      'Cargo': _cargoCtrl,
+    };
+    for (final entry in camposObligatorios.entries) {
+      if (entry.value.text.trim().isEmpty) {
         setState(() {
           _exitoEdicion = false;
           _mensajeEdicion =
-              'El sueldo no puede ser menor al salario minimo (\$$_salarioMinimo)';
+              '${entry.key}: El campo es obligatorio, por favor ingrese valor.';
         });
         return;
       }
+    }
+    final sueldoTexto = _sueldoCtrl.text.replaceAll('.', '').trim();
+    if (sueldoTexto.isEmpty) {
+      setState(() {
+        _exitoEdicion = false;
+        _mensajeEdicion =
+            'Sueldo base: El campo es obligatorio, por favor ingrese valor.';
+      });
+      return;
+    }
+    final sueldo = int.tryParse(sueldoTexto);
+    if (sueldo == null || sueldo < _salarioMinimo) {
+      setState(() {
+        _exitoEdicion = false;
+        _mensajeEdicion =
+            'El sueldo no puede ser menor al salario minimo (\$$_salarioMinimo)';
+      });
+      return;
+    }
+    final jornadaTexto = _jornadaSemanalCtrl.text.trim();
+    if (jornadaTexto.isEmpty) {
+      setState(() {
+        _exitoEdicion = false;
+        _mensajeEdicion =
+            'Horas semanales: El campo es obligatorio, por favor ingrese valor.';
+      });
+      return;
+    }
+    final jornadaSemanal = double.tryParse(jornadaTexto.replaceAll(',', '.'));
+    if (jornadaSemanal == null || jornadaSemanal <= 0 || jornadaSemanal > 66) {
+      setState(() {
+        _exitoEdicion = false;
+        _mensajeEdicion =
+            'Las horas semanales deben ser un número entre 1 y 66 (Art. 22, jornada ordinaria + tope legal de horas extra).';
+      });
+      return;
     }
     setState(() {
       _guardandoEdicion = true;
@@ -351,29 +435,35 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       final token = await SessionService.obtenerToken();
       final idEmple = widget.empleado['id_empleado'];
       final body = {
-        'rut': widget.empleado['rut'] ?? '',
+        'rut': _empleadoActual['rut'] ?? '',
         'primer_nombre': _primerNombreCtrl.text.trim(),
         'segundo_nombre': _segundoNombreCtrl.text.trim(),
         'apellido_paterno': _apPaternoCtrl.text.trim(),
         'apellido_materno': _apMaternoCtrl.text.trim(),
-        'correo': widget.empleado['correo'] ?? '',
+        'correo': _empleadoActual['correo'] ?? '',
         'telefono': _telefonoCtrl.text.trim(),
         'direccion': _direccionCtrl.text.trim(),
         'tipo_salud':
-            _saludEdicion ?? widget.empleado['tipo_salud'] ?? 'Fonasa',
-        'afp': _afpSeleccionada ?? widget.empleado['afp'] ?? 'AFP Capital',
+            _saludEdicion ?? _empleadoActual['tipo_salud'] ?? 'Fonasa',
+        'afp': _afpSeleccionada ?? _empleadoActual['afp'] ?? 'AFP Capital',
         'cargo': _cargoCtrl.text.trim(),
         'tipo_contrato':
             _tipoContratoEdicion ??
-            widget.empleado['tipo_contrato'] ??
+            _empleadoActual['tipo_contrato'] ??
             'Indefinido',
         'fecha_ingreso': _fechaIngresoEdicion != null
             ? _fechaIngresoEdicion!.toIso8601String().split('T')[0]
-            : widget.empleado['fecha_ingreso'] ?? '',
+            : _empleadoActual['fecha_ingreso'] ?? '',
         'sueldo_base':
-            int.tryParse(_sueldoCtrl.text.trim()) ??
-            widget.empleado['sueldo_base'] ??
+            int.tryParse(_sueldoCtrl.text.replaceAll('.', '').trim()) ??
+            _empleadoActual['sueldo_base'] ??
             _salarioMinimo,
+        'jornada_semanal_horas':
+            double.tryParse(
+              _jornadaSemanalCtrl.text.trim().replaceAll(',', '.'),
+            ) ??
+            _empleadoActual['jornada_semanal_horas'] ??
+            44.0,
         'discapacidad': _discapacidadCtrl.text.trim(),
         if (_fechaNacimientoEdicion != null)
           'fecha_nacimiento': _fechaNacimientoEdicion!.toIso8601String().split(
@@ -394,6 +484,22 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
         _mensajeEdicion = _exitoEdicion
             ? 'Datos actualizados correctamente'
             : data['mensaje'] ?? 'Error';
+        if (_exitoEdicion) {
+          // Refleja de inmediato en la previsualizacion lo que se
+          // acaba de guardar, sin esperar a recargar toda la pantalla.
+          _empleadoActual = {
+            ..._empleadoActual,
+            ...body,
+            'nombres': [
+              body['primer_nombre'],
+              body['segundo_nombre'],
+            ].where((s) => (s ?? '').toString().trim().isNotEmpty).join(' '),
+            'apellidos': [
+              body['apellido_paterno'],
+              body['apellido_materno'],
+            ].where((s) => (s ?? '').toString().trim().isNotEmpty).join(' '),
+          };
+        }
       });
       if (_exitoEdicion) {
         await Future.delayed(const Duration(seconds: 1));
@@ -411,7 +517,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
 
   @override
   Widget build(BuildContext context) {
-    final e = widget.empleado;
+    final e = _empleadoActual;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -619,11 +725,22 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         _CampoEdicion(label: 'Cargo *', controller: _cargoCtrl),
                         const SizedBox(height: 12),
                         _CampoEdicion(
-                          label: 'Sueldo base (CLP)',
+                          label: 'Sueldo base (CLP) *',
                           controller: _sueldoCtrl,
                           keyboardType: TextInputType.number,
+                          inputFormatters: [_MilesFormatter()],
+                        ),
+                        const SizedBox(height: 12),
+                        _CampoEdicion(
+                          label: 'Horas semanales (jornada) *',
+                          controller: _jornadaSemanalCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9.,]'),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -1341,9 +1458,136 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                             ),
                           ),
                         ],
-                        onChanged: (v) => setState(() => _rolSeleccionado = v),
+                        onChanged: (v) {
+                          setState(() => _rolSeleccionado = v);
+                          if (v == 'jefe' && _todosLosTrabajadores.isEmpty) {
+                            _cargarTodosLosTrabajadores();
+                          }
+                        },
                       ),
                       const SizedBox(height: 16),
+
+                      // ── Checklist de equipo (solo si el rol es Jefe) ──
+                      if (_rolSeleccionado == 'jefe') ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Equipo a cargo:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: Color(0xFF001E42),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Selecciona los trabajadores que quedarán bajo este Jefe. Quedarán asignados al mismo departamento que él.',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              if (_cargandoTrabajadores)
+                                const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              else if (_todosLosTrabajadores.isEmpty)
+                                const Text(
+                                  'No hay trabajadores disponibles.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF94A3B8),
+                                  ),
+                                )
+                              else
+                                Container(
+                                  constraints: const BoxConstraints(
+                                    maxHeight: 260,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFFE2E8F0),
+                                    ),
+                                  ),
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    itemCount: _todosLosTrabajadores.length,
+                                    separatorBuilder: (_, __) =>
+                                        const Divider(height: 1),
+                                    itemBuilder: (ctx, i) {
+                                      final t = _todosLosTrabajadores[i];
+                                      final trabajadorId =
+                                          t['trabajador_id'] as int;
+                                      final esElMismo =
+                                          t['persona_id'] ==
+                                          widget.empleado['id_empleado'];
+                                      final marcado = _equipoSeleccionado
+                                          .contains(trabajadorId);
+                                      return CheckboxListTile(
+                                        dense: true,
+                                        enabled: !esElMismo,
+                                        value: marcado,
+                                        onChanged: esElMismo
+                                            ? null
+                                            : (v) => setState(() {
+                                                if (v == true) {
+                                                  _equipoSeleccionado.add(
+                                                    trabajadorId,
+                                                  );
+                                                } else {
+                                                  _equipoSeleccionado.remove(
+                                                    trabajadorId,
+                                                  );
+                                                }
+                                              }),
+                                        title: Text(
+                                          esElMismo
+                                              ? '${t['nombre']} (este trabajador)'
+                                              : t['nombre'],
+                                          style: const TextStyle(fontSize: 13),
+                                        ),
+                                        subtitle: Text(
+                                          '${t['rut']} · Depto. actual: ${t['departamento_actual']}',
+                                          style: const TextStyle(fontSize: 11),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              if (_equipoSeleccionado.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${_equipoSeleccionado.length} trabajador(es) seleccionado(s)',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF059669),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+
                       if (_mensajeRol.isNotEmpty)
                         Container(
                           width: double.infinity,
@@ -1478,6 +1722,41 @@ class _FilaDato extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Formatea un string numerico con puntos de miles (estilo chileno).
+String _formatearMiles(String valor) {
+  final soloDigitos = valor.replaceAll(RegExp(r'[^0-9]'), '');
+  if (soloDigitos.isEmpty) return '';
+  final buffer = StringBuffer();
+  for (int i = 0; i < soloDigitos.length; i++) {
+    final posicionDesdeDerecha = soloDigitos.length - i;
+    buffer.write(soloDigitos[i]);
+    if (posicionDesdeDerecha > 1 && posicionDesdeDerecha % 3 == 1) {
+      buffer.write('.');
+    }
+  }
+  return buffer.toString();
+}
+
+/// Formatea numeros con puntos de miles a medida que se escriben
+/// (estilo chileno: 1.000.000), sin alterar el valor numerico real.
+class _MilesFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final soloDigitos = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (soloDigitos.isEmpty) {
+      return const TextEditingValue(text: '');
+    }
+    final textoFormateado = _formatearMiles(soloDigitos);
+    return TextEditingValue(
+      text: textoFormateado,
+      selection: TextSelection.collapsed(offset: textoFormateado.length),
     );
   }
 }
