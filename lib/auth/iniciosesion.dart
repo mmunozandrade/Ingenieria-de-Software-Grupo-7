@@ -29,6 +29,7 @@ import '../screens/USUARIO/vacacionesProgresivas.dart';
 import '../screens/USUARIO/historialVacaciones.dart';
 import '../screens/USUARIO/balanceVacaciones.dart';
 import '../screens/USUARIO/MisCompensaciones.dart';
+import '../screens/USUARIO/solicitarAnticipo.dart';
 
 const String apiUrl = 'http://127.0.0.1:8000';
 
@@ -74,7 +75,6 @@ class _SessionGuardState extends State<SessionGuard> {
     _timerAdvertencia?.cancel();
     _timerContador?.cancel();
 
-    // Si ya mostraba advertencia, cerrarla
     if (_mostrandoAdvertencia && mounted) {
       _mostrandoAdvertencia = false;
       Navigator.of(context, rootNavigator: true).popUntil((route) {
@@ -82,7 +82,6 @@ class _SessionGuardState extends State<SessionGuard> {
       });
     }
 
-    // Timer principal: 13 minutos → mostrar advertencia
     _timerInactividad = Timer(
       Duration(minutes: _minutosInactividad),
       _mostrarAdvertencia,
@@ -94,7 +93,6 @@ class _SessionGuardState extends State<SessionGuard> {
     _mostrandoAdvertencia = true;
     _segundosRestantes = _minutosAdvertencia * 60;
 
-    // Contador regresivo
     _timerContador = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted) {
         t.cancel();
@@ -107,14 +105,12 @@ class _SessionGuardState extends State<SessionGuard> {
       }
     });
 
-    // Mostrar dialog de advertencia
     showDialog(
       context: context,
       barrierDismissible: false,
       routeSettings: const RouteSettings(name: 'session_warning'),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
-          // Actualizar el dialogo cada segundo
           _timerContador?.cancel();
           _timerContador = Timer.periodic(const Duration(seconds: 1), (t) {
             if (!mounted) {
@@ -263,7 +259,6 @@ class _SessionGuardState extends State<SessionGuard> {
 
   @override
   Widget build(BuildContext context) {
-    // Detectar cualquier interaccion del usuario y resetear timer
     return Listener(
       onPointerDown: (_) => _resetTimer(),
       onPointerMove: (_) => _resetTimer(),
@@ -314,7 +309,6 @@ class _NotificacionesArticulo70State extends State<NotificacionesArticulo70> {
         });
       }
     } catch (_) {
-      // Silencioso: si falla, simplemente no se muestra el badge
     } finally {
       setState(() => _cargando = false);
     }
@@ -529,6 +523,676 @@ class _PanelAlertasArt70 extends StatelessWidget {
 }
 
 // ============================================================
+// ALERTAS DE VENCIMIENTO DE CONTRATO — Icono "CONTRATOS" con
+// badge para el Admin. Mismo patron que NotificacionesArticulo70.
+// ============================================================
+class NotificacionesContratos extends StatefulWidget {
+  const NotificacionesContratos({super.key});
+
+  @override
+  State<NotificacionesContratos> createState() =>
+      _NotificacionesContratosState();
+}
+
+class _NotificacionesContratosState extends State<NotificacionesContratos> {
+  int _count = 0;
+  List<dynamic> _alertas = [];
+  bool _cargando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarAlertas();
+  }
+
+  Future<void> _cargarAlertas() async {
+    setState(() => _cargando = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.get(
+        Uri.parse('$apiUrl/admin/alertas-vencimiento-contrato'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        setState(() {
+          _alertas = data['alertas'] ?? [];
+          _count = _alertas.length;
+        });
+      }
+    } catch (_) {
+    } finally {
+      setState(() => _cargando = false);
+    }
+  }
+
+  void _abrirPanel() {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 480,
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: const _PanelAlertasContratos(),
+        ),
+      ),
+    ).then((_) => _cargarAlertas());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        TextButton.icon(
+          onPressed: _abrirPanel,
+          icon: const Icon(
+            Icons.description_outlined,
+            color: Colors.white,
+            size: 20,
+          ),
+          label: const Text(
+            'Contratos',
+            style: TextStyle(color: Colors.white, fontSize: 13),
+          ),
+        ),
+        if (_count > 0)
+          Positioned(
+            right: 2,
+            top: 2,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                _count > 9 ? '9+' : '$_count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// El panel hace su PROPIA carga (independiente del icono que lo abre),
+// para que el circulo de "cargando" siempre se detenga bien sin
+// importar en que momento exacto se haya abierto el dialogo.
+class _PanelAlertasContratos extends StatefulWidget {
+  const _PanelAlertasContratos();
+
+  @override
+  State<_PanelAlertasContratos> createState() => _PanelAlertasContratosState();
+}
+
+class _PanelAlertasContratosState extends State<_PanelAlertasContratos> {
+  List<dynamic> _alertas = [];
+  bool _cargando = true;
+  bool _forzandoRevision = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarAlertas();
+  }
+
+  Future<void> _cargarAlertas() async {
+    setState(() => _cargando = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.get(
+        Uri.parse('$apiUrl/admin/alertas-vencimiento-contrato'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (mounted && data['success'] == true) {
+        setState(() => _alertas = data['alertas'] ?? []);
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  Future<void> _forzarRevision() async {
+    setState(() => _forzandoRevision = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.post(
+        Uri.parse('$apiUrl/admin/forzar-revision-contratos'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            data['mensaje'] ??
+                (data['success'] == true ? 'Revisión ejecutada' : 'Error'),
+          ),
+          backgroundColor: data['success'] == true ? Colors.green : Colors.red,
+        ),
+      );
+      if (data['success'] == true) _cargarAlertas();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo conectar al servidor'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _forzandoRevision = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final alertas = _alertas;
+    final cargando = _cargando;
+    final onRefresh = _cargarAlertas;
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Contratos por Vencer',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF001E42),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Trabajadores con contrato a Plazo Fijo dentro de los proximos 30 dias.',
+            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: _forzandoRevision ? null : _forzarRevision,
+              icon: _forzandoRevision
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh, size: 16),
+              label: const Text(
+                'Forzar revisión ahora',
+                style: TextStyle(fontSize: 12),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFD97706)),
+                foregroundColor: const Color(0xFFD97706),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: cargando
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : alertas.isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Text(
+                        'No hay alertas activas.',
+                        style: TextStyle(color: Color(0xFF64748B)),
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: alertas.length,
+                    itemBuilder: (ctx, i) {
+                      final a = alertas[i];
+                      final bool urgente = a['urgente'] == true;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: urgente
+                              ? const Color(0xFFFEE2E2)
+                              : const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: urgente
+                                ? const Color(0xFFFCA5A5)
+                                : const Color(0xFFFDE68A),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    a['nombre_completo'] ?? '—',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: urgente
+                                        ? Colors.red
+                                        : const Color(0xFFF59E0B),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${a['dias_restantes']} dia(s)',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'RUT: ${a['rut'] ?? '—'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF475569),
+                              ),
+                            ),
+                            Text(
+                              'Tipo de contrato: ${a['tipo_contrato'] ?? '—'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF475569),
+                              ),
+                            ),
+                            Text(
+                              'Vence el: ${a['fecha_vencimiento'] ?? '—'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF475569),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Vacaciones Progresivas alcanzadas (Art. 68) ────────────────
+// Mismo patron exacto que NotificacionesContratos: icono con badge
+// de conteo, y un panel independiente que hace su propia carga.
+class NotificacionesVacacionesProgresivas extends StatefulWidget {
+  const NotificacionesVacacionesProgresivas({super.key});
+
+  @override
+  State<NotificacionesVacacionesProgresivas> createState() =>
+      _NotificacionesVacacionesProgresivasState();
+}
+
+class _NotificacionesVacacionesProgresivasState
+    extends State<NotificacionesVacacionesProgresivas> {
+  int _count = 0;
+  List<dynamic> _alertas = [];
+  bool _cargando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarAlertas();
+  }
+
+  Future<void> _cargarAlertas() async {
+    setState(() => _cargando = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.get(
+        Uri.parse('$apiUrl/admin/alertas-vacaciones-progresivas'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        setState(() {
+          _alertas = data['alertas'] ?? [];
+          _count = _alertas.length;
+        });
+      }
+    } catch (_) {
+    } finally {
+      setState(() => _cargando = false);
+    }
+  }
+
+  void _abrirPanel() {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 480,
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          child: const _PanelAlertasVacacionesProgresivas(),
+        ),
+      ),
+    ).then((_) => _cargarAlertas());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        TextButton.icon(
+          onPressed: _abrirPanel,
+          icon: const Icon(Icons.trending_up, color: Colors.white, size: 20),
+          label: const Text(
+            'Progresivas',
+            style: TextStyle(color: Colors.white, fontSize: 13),
+          ),
+        ),
+        if (_count > 0)
+          Positioned(
+            right: 2,
+            top: 2,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                _count > 9 ? '9+' : '$_count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _PanelAlertasVacacionesProgresivas extends StatefulWidget {
+  const _PanelAlertasVacacionesProgresivas();
+
+  @override
+  State<_PanelAlertasVacacionesProgresivas> createState() =>
+      _PanelAlertasVacacionesProgresivasState();
+}
+
+class _PanelAlertasVacacionesProgresivasState
+    extends State<_PanelAlertasVacacionesProgresivas> {
+  List<dynamic> _alertas = [];
+  bool _cargando = true;
+  bool _forzandoRevision = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarAlertas();
+  }
+
+  Future<void> _cargarAlertas() async {
+    setState(() => _cargando = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.get(
+        Uri.parse('$apiUrl/admin/alertas-vacaciones-progresivas'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (mounted && data['success'] == true) {
+        setState(() => _alertas = data['alertas'] ?? []);
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  Future<void> _forzarRevision() async {
+    setState(() => _forzandoRevision = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.post(
+        Uri.parse('$apiUrl/admin/forzar-revision-vacaciones-progresivas'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            data['mensaje'] ??
+                (data['success'] == true ? 'Revisión ejecutada' : 'Error'),
+          ),
+          backgroundColor: data['success'] == true ? Colors.green : Colors.red,
+        ),
+      );
+      if (data['success'] == true) _cargarAlertas();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo conectar al servidor'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _forzandoRevision = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final alertas = _alertas;
+    final cargando = _cargando;
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Vacaciones Progresivas Alcanzadas',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF001E42),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Trabajadores que ya cumplen el derecho a vacaciones progresivas (Art. 68).',
+            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: _forzandoRevision ? null : _forzarRevision,
+              icon: _forzandoRevision
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh, size: 16),
+              label: const Text(
+                'Forzar revisión ahora',
+                style: TextStyle(fontSize: 12),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF059669)),
+                foregroundColor: const Color(0xFF059669),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: cargando
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : alertas.isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Text(
+                        'No hay alertas activas.',
+                        style: TextStyle(color: Color(0xFF64748B)),
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: alertas.length,
+                    itemBuilder: (ctx, i) {
+                      final a = alertas[i];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              a['nombre'] ?? '—',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'RUT: ${a['rut'] ?? '—'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF475569),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              a['mensaje'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF065F46),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Notificado el: ${a['fecha_envio'] ?? '—'}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
 // DASHBOARD ADMIN
 // ============================================================
 class AdminDashboard extends StatelessWidget {
@@ -559,6 +1223,8 @@ class AdminDashboard extends StatelessWidget {
               ),
             ),
             actions: [
+              const NotificacionesContratos(),
+              const NotificacionesVacacionesProgresivas(),
               const NotificacionesArticulo70(),
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
@@ -1043,6 +1709,21 @@ class UsuarioDashboard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            _buildCard(
+                              context,
+                              icon: Icons.attach_money_outlined,
+                              color: Colors.orange,
+                              title: 'Anticipo de Sueldo',
+                              descripcion:
+                                  'Solicitar un anticipo excepcional de sueldo desde mi perfil',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const SolicitarAnticipoScreen(),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -1212,8 +1893,7 @@ class JefeDashboard extends StatelessWidget {
               final double maxWidthContenido = esEscritorio
                   ? 900
                   : (esTablet ? 720 : double.infinity);
-              final int columnasSupervision = esEscritorio || esTablet ? 2 : 1;
-              final int columnasModulos = esEscritorio ? 3 : (esTablet ? 2 : 1);
+              final int columnas = esEscritorio ? 3 : (esTablet ? 2 : 1);
 
               return SizedBox(
                 width: double.infinity,
@@ -1266,7 +1946,7 @@ class JefeDashboard extends StatelessWidget {
                         ),
                         const SizedBox(height: 24),
                         const Text(
-                          'Modulos de Supervision',
+                          'Mis Modulos',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1275,13 +1955,13 @@ class JefeDashboard extends StatelessWidget {
                         const SizedBox(height: 16),
 
                         GridView.count(
-                          crossAxisCount: columnasSupervision,
+                          crossAxisCount: columnas,
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisSpacing: 24,
                           mainAxisSpacing: 24,
                           childAspectRatio: esEscritorio || esTablet
-                              ? 1.6
+                              ? 1.5
                               : 2.6,
                           children: [
                             _buildCard(
@@ -1312,29 +1992,6 @@ class JefeDashboard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Mis Modulos',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        GridView.count(
-                          crossAxisCount: columnasModulos,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          crossAxisSpacing: 24,
-                          mainAxisSpacing: 24,
-                          childAspectRatio: esEscritorio || esTablet
-                              ? 1.5
-                              : 2.6,
-                          children: [
                             _buildCard(
                               context,
                               icon: Icons.calendar_today_outlined,
@@ -1430,6 +2087,21 @@ class JefeDashboard extends StatelessWidget {
                                 MaterialPageRoute(
                                   builder: (_) =>
                                       const MiDesgloseLiquidacionScreen(),
+                                ),
+                              ),
+                            ),
+                            _buildCard(
+                              context,
+                              icon: Icons.attach_money_outlined,
+                              color: Colors.orange,
+                              title: 'Anticipo de Sueldo',
+                              descripcion:
+                                  'Solicitar un anticipo excepcional de sueldo desde mi perfil',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const SolicitarAnticipoScreen(),
                                 ),
                               ),
                             ),
@@ -1556,7 +2228,6 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
   bool _cargando = false;
   String _error = '';
 
-  // Reenvio de correo de verificacion (cuenta creada pero sin activar)
   bool _cuentaNoVerificada = false;
   bool _reenviando = false;
   String _mensajeReenvio = '';
@@ -1771,8 +2442,6 @@ class _PanelMarcaLogin extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Elemento decorativo: arcos concentricos sutiles, alusivos
-          // a las fichas/registros circulares de un sistema clinico.
           Positioned(
             right: -90,
             top: -90,
