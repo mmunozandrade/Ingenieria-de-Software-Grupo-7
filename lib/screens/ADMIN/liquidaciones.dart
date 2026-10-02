@@ -3,6 +3,7 @@ import 'calculoLiquidacionWizardNuevo.dart';
 import 'liquidacionHonorario.dart';
 import 'informeRemuneraciones.dart';
 import 'informeConsolidadoRemuneraciones.dart';
+import 'informeConsolidadoCostos.dart';
 import 'cargaArchivos.dart';
 import 'alertasPreCierre.dart';
 
@@ -256,7 +257,7 @@ class LiquidacionesScreen extends StatelessWidget {
                     Center(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxWidth: esEscritorio ? 760 : 520,
+                          maxWidth: esEscritorio ? 1120 : 520,
                         ),
                         child: dosColumnas
                             ? Row(
@@ -266,7 +267,6 @@ class LiquidacionesScreen extends StatelessWidget {
                                       icono: Icons.description_outlined,
                                       color: const Color(0xFF64748B),
                                       titulo: 'Informe de Remuneraciones',
-                                      etiqueta: 'Desarrollo en incremento 3',
                                       descripcion:
                                           'Generar y exportar el informe por trabajador y período (Excel / PDF).',
                                       onTap: () => Navigator.push(
@@ -278,14 +278,13 @@ class LiquidacionesScreen extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 36),
+                                  const SizedBox(width: 28),
                                   Expanded(
                                     child: _TarjetaLiquidacion(
                                       icono: Icons.summarize_outlined,
                                       color: const Color(0xFF059669),
                                       titulo:
                                           'Informe Consolidado de Remuneraciones',
-                                      etiqueta: 'Desarrollo en incremento 3',
                                       descripcion:
                                           'Costo trabajador vs. costo empleador de todos los trabajadores, con el total general del período.',
                                       onTap: () => Navigator.push(
@@ -293,6 +292,23 @@ class LiquidacionesScreen extends StatelessWidget {
                                         MaterialPageRoute(
                                           builder: (_) =>
                                               const InformeConsolidadoRemuneracionesScreen(),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 28),
+                                  Expanded(
+                                    child: _TarjetaLiquidacion(
+                                      icono: Icons.account_balance_outlined,
+                                      color: const Color(0xFF7C3AED),
+                                      titulo: 'Informe Consolidado de Costos',
+                                      descripcion:
+                                          'Costo total para el empleador, sueldos base, bonos, descuentos previsionales e impuesto único, sumados de toda la clínica.',
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const InformeConsolidadoCostosScreen(),
                                         ),
                                       ),
                                     ),
@@ -305,7 +321,6 @@ class LiquidacionesScreen extends StatelessWidget {
                                     icono: Icons.description_outlined,
                                     color: const Color(0xFF64748B),
                                     titulo: 'Informe de Remuneraciones',
-                                    etiqueta: 'Desarrollo en incremento 3',
                                     descripcion:
                                         'Generar y exportar el informe por trabajador y período (Excel / PDF).',
                                     onTap: () => Navigator.push(
@@ -322,7 +337,6 @@ class LiquidacionesScreen extends StatelessWidget {
                                     color: const Color(0xFF059669),
                                     titulo:
                                         'Informe Consolidado de Remuneraciones',
-                                    etiqueta: 'Desarrollo en incremento 3',
                                     descripcion:
                                         'Costo trabajador vs. costo empleador de todos los trabajadores, con el total general del período.',
                                     onTap: () => Navigator.push(
@@ -330,6 +344,21 @@ class LiquidacionesScreen extends StatelessWidget {
                                       MaterialPageRoute(
                                         builder: (_) =>
                                             const InformeConsolidadoRemuneracionesScreen(),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _TarjetaLiquidacion(
+                                    icono: Icons.account_balance_outlined,
+                                    color: const Color(0xFF7C3AED),
+                                    titulo: 'Informe Consolidado de Costos',
+                                    descripcion:
+                                        'Costo total para el empleador, sueldos base, bonos, descuentos previsionales e impuesto único, sumados de toda la clínica.',
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const InformeConsolidadoCostosScreen(),
                                       ),
                                     ),
                                   ),
@@ -406,7 +435,6 @@ class _TarjetaLiquidacion extends StatelessWidget {
   final String descripcion;
   final VoidCallback onTap;
   final bool ancho;
-  final String? etiqueta;
 
   const _TarjetaLiquidacion({
     required this.icono,
@@ -415,7 +443,6 @@ class _TarjetaLiquidacion extends StatelessWidget {
     required this.descripcion,
     required this.onTap,
     this.ancho = false,
-    this.etiqueta,
   });
 
   @override
@@ -457,17 +484,6 @@ class _TarjetaLiquidacion extends StatelessWidget {
                               color: Color(0xFF0F172A),
                             ),
                           ),
-                          if (etiqueta != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              etiqueta!,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red,
-                              ),
-                            ),
-                          ],
                           const SizedBox(height: 4),
                           Text(
                             descripcion,
@@ -496,17 +512,6 @@ class _TarjetaLiquidacion extends StatelessWidget {
                         color: Color(0xFF0F172A),
                       ),
                     ),
-                    if (etiqueta != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        etiqueta!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 8),
                     Text(
                       descripcion,
