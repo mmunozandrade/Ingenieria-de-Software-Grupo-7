@@ -1122,12 +1122,12 @@ class _SeccionDescuentoState extends State<SeccionDescuento> {
           'anio_inicio': _anioInicioPrestamo,
         };
         if (_subtipoPrestamo == 'Interno') {
-          bodyPrestamo['monto_prestamo'] = int.parse(
-            _montoPrestamoCtrl.text.trim(),
+          bodyPrestamo['monto_prestamo'] = desformatearMiles(
+            _montoPrestamoCtrl.text,
           );
         } else {
-          bodyPrestamo['monto_cuota_manual'] = int.parse(
-            _montoCuotaManualCtrl.text.trim(),
+          bodyPrestamo['monto_cuota_manual'] = desformatearMiles(
+            _montoCuotaManualCtrl.text,
           );
         }
         final r = await _enviarUno(bodyPrestamo);
@@ -2145,6 +2145,7 @@ class _SeccionHorasExtrasState extends State<SeccionHorasExtras> {
   String _mensaje = '';
   bool _exito = false;
   String? _yaRegistrado;
+  Map<String, dynamic>? _solicitudReferencia;
 
   @override
   void initState() {
@@ -2160,10 +2161,61 @@ class _SeccionHorasExtrasState extends State<SeccionHorasExtras> {
     if (resumen == null || !mounted) return;
     final horas = resumen['horas_extras'];
     final montoHoras = resumen['horas_extras_monto'];
-    setState(
-      () => _yaRegistrado = horas != null
+    setState(() {
+      _yaRegistrado = horas != null
           ? '$horas horas registradas${montoHoras != null ? ' (\$${formatearMiles(montoHoras)} CLP)' : ''}'
-          : null,
+          : null;
+      _solicitudReferencia =
+          resumen['solicitud_horas_extras_referencia'] as Map<String, dynamic>?;
+    });
+  }
+
+  Widget _bannerSolicitudReferencia() {
+    final s = _solicitudReferencia;
+    if (s == null) return const SizedBox();
+    final estado = s['estado'] as String;
+    final horas2 = s['cantidad_horas'];
+    String texto;
+    if (estado == 'aprobada') {
+      texto =
+          'El trabajador tiene una solicitud APROBADA de $horas2 horas extras para este período. Recuerda ingresarlas abajo si corresponde.';
+    } else if (estado == 'rechazada') {
+      texto =
+          'El trabajador tenía una solicitud de $horas2 horas extras para este período, marcada como RECHAZADA.';
+    } else {
+      texto =
+          'El trabajador tiene una solicitud de $horas2 horas extras PENDIENTE de revisión para este período.';
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.campaign_outlined,
+            size: 16,
+            color: Color(0xFF92400E),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              texto,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF92400E),
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2178,7 +2230,7 @@ class _SeccionHorasExtrasState extends State<SeccionHorasExtras> {
     if (horas == null || horas <= 0) {
       setState(() {
         _exito = false;
-        _mensaje = 'Ingresa una cantidad válida';
+        _mensaje = 'Debe completar todos los campos solicitados';
       });
       return;
     }
@@ -2226,6 +2278,7 @@ class _SeccionHorasExtrasState extends State<SeccionHorasExtras> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _bannerSolicitudReferencia(),
         BannerYaRegistrado(
           lineas: _yaRegistrado != null ? [_yaRegistrado!] : [],
         ),
@@ -4441,13 +4494,21 @@ class _SeccionAfcYAfpSaludState extends State<SeccionAfcYAfpSalud> {
               children: [
                 // El desglose por tipo de contrato (tipo, porcentaje
                 // trabajador/empleador) se oculta por ahora -- ese
-                // nivel de detalle corresponde al Incremento 3. El
-                // monto se enmascara con "X CLP" -- el valor real
-                // sigue calculandose por dentro (ver
-                // _resultadoAfc!['descuento_trabajador']), solo no
-                // se muestra en pantalla mientras dure este ocultamiento.
+                // nivel de detalle corresponde al Incremento 3. Se
+                // muestra solo el monto final del descuento.
                 Text(
-                  'Descuento AFC: X CLP',
+                  'Contrato: ${_resultadoAfc!['tipo_contrato']}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                Text(
+                  'Descuento trabajador (${_resultadoAfc!['porcentaje_trabajador']}%): \$${formatearMiles(_resultadoAfc!['descuento_trabajador'])} CLP',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Aporte empleador (${_resultadoAfc!['porcentaje_empleador']}%): \$${formatearMiles(_resultadoAfc!['aporte_empleador'])} CLP',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,

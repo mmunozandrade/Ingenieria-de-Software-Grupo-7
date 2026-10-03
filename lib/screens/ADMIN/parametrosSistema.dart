@@ -194,8 +194,7 @@ class ParametrosSistemaScreen extends StatelessWidget {
                         _TarjetaParametro(
                           icono: Icons.card_giftcard_outlined,
                           color: const Color(0xFFF59E0B),
-                          titulo:
-                              'Gratificación Legal - Se desarrollará en Incremento 3',
+                          titulo: 'Gratificación Legal',
                           descripcion:
                               'Modalidad de gratificación y valor del IMM del período. Se calcula solo, sin pasos adicionales en el wizard.',
                           onTap: () => Navigator.push(

@@ -394,7 +394,12 @@ class _RegistrarDescuentosState extends State<RegistrarDescuentos> {
         });
         _cargarHistorial();
       }
-    } catch (_) {
+    } catch (e, st) {
+      // TEMPORAL: se imprime el error real para diagnosticar.
+      // eslint-disable-next-line
+      // ignore: avoid_print
+      print('ERROR REAL en _registrarDescuento: $e');
+      print('STACKTRACE: $st');
       setState(() {
         _exito = false;
         _mensaje = 'No se pudo conectar al servidor';

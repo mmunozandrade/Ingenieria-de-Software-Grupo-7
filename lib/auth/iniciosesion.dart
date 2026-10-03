@@ -30,6 +30,8 @@ import '../screens/USUARIO/historialVacaciones.dart';
 import '../screens/USUARIO/balanceVacaciones.dart';
 import '../screens/USUARIO/MisCompensaciones.dart';
 import '../screens/USUARIO/solicitarAnticipo.dart';
+import '../screens/USUARIO/solicitarHorasExtras.dart';
+import '../screens/USUARIO/misDocumentos.dart';
 
 const String apiUrl = 'http://127.0.0.1:8000';
 
@@ -1724,6 +1726,35 @@ class UsuarioDashboard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            _buildCard(
+                              context,
+                              icon: Icons.schedule_outlined,
+                              color: Colors.deepPurple,
+                              title: 'Horas Extras',
+                              descripcion:
+                                  'Registrar una solicitud de referencia de horas extras trabajadas',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const SolicitarHorasExtrasScreen(),
+                                ),
+                              ),
+                            ),
+                            _buildCard(
+                              context,
+                              icon: Icons.verified_outlined,
+                              color: const Color(0xFF009A8D),
+                              title: 'Mis Documentos',
+                              descripcion:
+                                  'Generar certificado de antigüedad y ver mis documentos guardados',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MisDocumentosScreen(),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -2102,6 +2133,35 @@ class JefeDashboard extends StatelessWidget {
                                 MaterialPageRoute(
                                   builder: (_) =>
                                       const SolicitarAnticipoScreen(),
+                                ),
+                              ),
+                            ),
+                            _buildCard(
+                              context,
+                              icon: Icons.schedule_outlined,
+                              color: Colors.deepPurple,
+                              title: 'Horas Extras',
+                              descripcion:
+                                  'Registrar una solicitud de referencia de horas extras trabajadas',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const SolicitarHorasExtrasScreen(),
+                                ),
+                              ),
+                            ),
+                            _buildCard(
+                              context,
+                              icon: Icons.verified_outlined,
+                              color: const Color(0xFF009A8D),
+                              title: 'Mis Documentos',
+                              descripcion:
+                                  'Generar certificado de antigüedad y ver mis documentos guardados',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const MisDocumentosScreen(),
                                 ),
                               ),
                             ),
