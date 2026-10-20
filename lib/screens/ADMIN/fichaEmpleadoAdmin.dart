@@ -75,6 +75,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
 
   // ── Vigencia del Contrato (Plazo Fijo) ────────────────────
   DateTime? _fechaVencimientoActual;
+  DateTime? _fechaCertificado; // fecha de presentación del certificado AFP
   DateTime? _fechaVencimientoNueva;
   bool _guardandoVencimiento = false;
   String _mensajeVencimiento = '';
@@ -122,6 +123,10 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     _empleadoActual = Map<String, dynamic>.from(widget.empleado);
     final previos = widget.empleado['meses_cotizados_previos'] ?? 0;
     _mesesCtrl.text = previos.toString();
+    final fc = widget.empleado['fecha_presentacion_certificado'];
+    if (fc is String && fc.length >= 10) {
+      _fechaCertificado = DateTime.tryParse(fc.substring(0, 10));
+    }
     _afpSeleccionada = widget.empleado['afp'];
     if (_afpSeleccionada != null && !_afpListAdmin.contains(_afpSeleccionada)) {
       _afpSeleccionada = null;
@@ -429,7 +434,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     if (meses == null || meses < 0 || meses > 600) {
       setState(() {
         _exito = false;
-        _mensaje = 'Los meses deben ser un numero entre 0 y 600';
+        _mensaje = 'Los meses deben ser un número entre 0 y 600';
       });
       return;
     }
@@ -444,6 +449,13 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       setState(() {
         _exito = false;
         _mensaje = 'Debes adjuntar el certificado AFP en formato PDF';
+      });
+      return;
+    }
+    if (meses > 0 && _fechaCertificado == null) {
+      setState(() {
+        _exito = false;
+        _mensaje = 'Debes indicar la fecha de presentación del certificado';
       });
       return;
     }
@@ -478,6 +490,11 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
         body: jsonEncode({
           'meses_cotizados_previos': meses,
           'afp': _afpSeleccionada,
+          if (meses > 0 && _fechaCertificado != null)
+            'fecha_presentacion_certificado':
+                '${_fechaCertificado!.year.toString().padLeft(4, '0')}-'
+                '${_fechaCertificado!.month.toString().padLeft(2, '0')}-'
+                '${_fechaCertificado!.day.toString().padLeft(2, '0')}',
         }),
       );
       final data = jsonDecode(response.body);
@@ -582,7 +599,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       setState(() {
         _exitoVencimiento = false;
         _mensajeVencimiento =
-            'No se encontro el contrato activo de este trabajador';
+            'No se encontró el contrato activo de este trabajador';
       });
       return;
     }
@@ -656,7 +673,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       setState(() {
         _exitoEdicion = false;
         _mensajeEdicion =
-            'El sueldo no puede ser menor al salario minimo (\$$_salarioMinimo)';
+            'El sueldo no puede ser menor al salario mínimo (\$$_salarioMinimo)';
       });
       return;
     }
@@ -818,9 +835,9 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                       _FilaDato(label: 'RUT', valor: e['rut'] ?? '—'),
                       _FilaDato(label: 'Cargo', valor: e['cargo'] ?? '—'),
                       _FilaDato(label: 'Correo', valor: e['correo'] ?? '—'),
-                      _FilaDato(label: 'Telefono', valor: e['telefono'] ?? '—'),
+                      _FilaDato(label: 'Teléfono', valor: e['telefono'] ?? '—'),
                       _FilaDato(
-                        label: 'Direccion',
+                        label: 'Dirección',
                         valor: e['direccion'] ?? '—',
                       ),
                       _FilaDato(label: 'Salud', valor: e['tipo_salud'] ?? '—'),
@@ -844,9 +861,9 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         valor: e['fecha_ingreso'] ?? '—',
                       ),
                       _FilaDato(
-                        label: 'Meses en la clinica',
+                        label: 'Meses en la clínica',
                         valor:
-                            '$_mesesClinica meses (${_mesesClinica ~/ 12} anos)',
+                            '$_mesesClinica meses (${_mesesClinica ~/ 12} años)',
                       ),
                       const SizedBox(height: 16),
 
@@ -859,7 +876,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                             onPressed: _abrirFormulario,
                             icon: const Icon(Icons.edit_outlined, size: 18),
                             label: const Text(
-                              'Ingresar informacion al usuario',
+                              'Ingresar información al usuario',
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                             style: OutlinedButton.styleFrom(
@@ -881,7 +898,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              'Editar Informacion',
+                              'Editar Información',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -965,13 +982,13 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
 
                         // Contacto
                         _CampoEdicion(
-                          label: 'Telefono (+56 9 XXXX XXXX)',
+                          label: 'Teléfono (+56 9 XXXX XXXX)',
                           controller: _telefonoCtrl,
                           keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 12),
                         _CampoEdicion(
-                          label: 'Direccion',
+                          label: 'Dirección',
                           controller: _direccionCtrl,
                           maxLines: 2,
                         ),
@@ -1004,7 +1021,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         // Salud
                         DropdownButtonFormField<String>(
                           value: _saludEdicion,
-                          decoration: _dropDeco('Institucion de salud'),
+                          decoration: _dropDeco('Institución de salud'),
                           items: _institucionesSalud
                               .map(
                                 (s) =>
@@ -1090,7 +1107,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         if (_fechaNacimientoEdicion != null) ...[
                           const SizedBox(height: 6),
                           Text(
-                            'Edad: ${_calcularEdad()} anos',
+                            'Edad: ${_calcularEdad()} años',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF0D9488),
@@ -1102,7 +1119,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         // Discapacidad
                         _CampoEdicion(
                           label:
-                              'Informacion discapacidad (Ley 20.422) — opcional',
+                              'Información discapacidad (Ley 20.422) — opcional',
                           controller: _discapacidadCtrl,
                           maxLines: 2,
                         ),
@@ -1338,7 +1355,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                                 runSpacing: 8,
                                 children: [
                                   ChoiceChip(
-                                    label: const Text('Todos los periodos'),
+                                    label: const Text('Todos los períodos'),
                                     selected: _filtroPeriodoDocumento == null,
                                     onSelected: (_) => setState(
                                       () => _filtroPeriodoDocumento = null,
@@ -1653,7 +1670,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         ),
                         const Divider(height: 20),
                         const Text(
-                          'Este trabajador tiene contrato a Plazo Fijo. Registra la fecha de vencimiento para que el sistema genere alertas automaticas a 30 y 15 dias del vencimiento.',
+                          'Este trabajador tiene contrato a Plazo Fijo. Registra la fecha de vencimiento para que el sistema genere alertas automáticas a 30 y 15 días del vencimiento.',
                           style: TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF64748B),
@@ -1839,7 +1856,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                       ),
                       const Divider(height: 20),
                       const Text(
-                        'Ingresa los meses cotizados antes de ingresar a la clinica, segun certificado AFP.',
+                        'Ingresa los meses cotizados antes de ingresar a la clínica, según certificado AFP.',
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF64748B),
@@ -1855,8 +1872,8 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         onChanged: (_) => setState(() => _calcularMeses()),
                         decoration: InputDecoration(
                           labelText: 'Meses de cotizaciones previas *',
-                          hintText: 'Ej: 48 (equivale a 4 anos)',
-                          helperText: 'Numero entero entre 0 y 600',
+                          hintText: 'Ej: 48 (equivale a 4 años)',
+                          helperText: 'Número entero entre 0 y 600',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
                           border: OutlineInputBorder(
@@ -1878,6 +1895,41 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      if ((int.tryParse(_mesesCtrl.text) ?? 0) > 0) ...[
+                        _SelectorFechaEdicion(
+                          label: 'Fecha de presentación del certificado *',
+                          fecha: _fechaCertificado,
+                          onTap: () async {
+                            final hoy = DateTime.now();
+                            final f = await showDatePicker(
+                              context: context,
+                              initialDate: _fechaCertificado ?? hoy,
+                              firstDate: DateTime(1980),
+                              lastDate: hoy,
+                              builder: (ctx, child) => Theme(
+                                data: Theme.of(ctx).copyWith(
+                                  colorScheme: const ColorScheme.light(
+                                    primary: Color(0xFF001E42),
+                                    onPrimary: Colors.white,
+                                  ),
+                                ),
+                                child: child!,
+                              ),
+                            );
+                            if (f != null)
+                              setState(() => _fechaCertificado = f);
+                          },
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Los días progresivos se devengan desde el aniversario de contrato posterior o igual a esta fecha.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(14),
@@ -1898,7 +1950,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
-                                  'Meses previos (max 120):',
+                                  'Meses previos (máx. 120):',
                                   style: TextStyle(fontSize: 13),
                                 ),
                                 Text(
@@ -1914,7 +1966,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
-                                  'Meses en la clinica:',
+                                  'Meses en la clínica:',
                                   style: TextStyle(fontSize: 13),
                                 ),
                                 Text(
@@ -1961,8 +2013,8 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                                 Expanded(
                                   child: Text(
                                     _cumpleProgresivos
-                                        ? 'Cumple 120 meses — tiene derecho a dias progresivos (Art. 68)'
-                                        : 'No cumple 120 meses aun — faltan ${120 - _totalMeses} meses',
+                                        ? 'Cumple 120 meses — tiene derecho a días progresivos (Art. 68)'
+                                        : 'No cumple 120 meses aún — faltan ${120 - _totalMeses} meses',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: _cumpleProgresivos
@@ -1978,7 +2030,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Certificado AFP (PDF, max 5 MB)',
+                        'Certificado AFP (PDF, máx. 5 MB)',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -2202,7 +2254,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                           ),
                           SizedBox(width: 8),
                           Text(
-                            'Asignacion de Rol',
+                            'Asignación de Rol',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -2233,7 +2285,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                             ),
                             SizedBox(height: 6),
                             Text(
-                              '• Jefe: puede ver informacion de su area.',
+                              '• Jefe: puede ver información de su área.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF1E3A8A),
@@ -2241,7 +2293,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              '• Usuario: solo ve su propia informacion.',
+                              '• Usuario: solo ve su propia información.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF1E3A8A),
