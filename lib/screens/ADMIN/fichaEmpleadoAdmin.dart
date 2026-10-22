@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:html' as html;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,7 +23,7 @@ const List<String> _rolesDisponibles = ['usuario', 'jefe'];
 
 const List<String> _tiposContrato = [
   'Indefinido',
-  'Plazo fijo',
+  'Plazo Fijo',
   'Por obra',
   'Honorario',
 ];
@@ -35,6 +36,13 @@ class FichaEmpleadoAdmin extends StatefulWidget {
 
   @override
   State<FichaEmpleadoAdmin> createState() => _FichaEmpleadoAdminState();
+}
+
+String? _periodoDesdeFechaCarga(dynamic fechaCarga) {
+  final texto = fechaCarga?.toString() ?? '';
+  final partes = texto.split(' ').first.split('/');
+  if (partes.length != 3) return null;
+  return '${partes[1]}/${partes[2]}'; // MM/AAAA
 }
 
 class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
@@ -65,6 +73,29 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
   bool _cargandoTrabajadores = false;
   Set<int> _equipoSeleccionado = {};
 
+  // ── Vigencia del Contrato (Plazo Fijo) ────────────────────
+  DateTime? _fechaVencimientoActual;
+  DateTime? _fechaCertificado; // fecha de presentación del certificado AFP
+  DateTime? _fechaVencimientoNueva;
+  bool _guardandoVencimiento = false;
+  String _mensajeVencimiento = '';
+  bool _exitoVencimiento = false;
+
+  // ── Documentos del perfil ──────────────────────────────────
+  List<dynamic> _documentos = [];
+  bool _cargandoDocumentos = false;
+  String? _filtroTipoDocumento; // null = "Todos"
+  String?
+  _filtroPeriodoDocumento; // null = "Todos" (MM/AAAA, segun fecha_carga)
+  int? _descargandoDocumentoId;
+
+  // ── Turno ──────────────────────────────────────────────────
+  List<dynamic> _turnosDisponibles = [];
+  String? _turnoSeleccionado;
+  bool _guardandoTurno = false;
+  String _mensajeTurno = '';
+  bool _exitoTurno = false;
+
   // ── Formulario edicion desplegable ────────────────────────
   bool _formularioVisible = false;
   bool _guardandoEdicion = false;
@@ -92,6 +123,10 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     _empleadoActual = Map<String, dynamic>.from(widget.empleado);
     final previos = widget.empleado['meses_cotizados_previos'] ?? 0;
     _mesesCtrl.text = previos.toString();
+    final fc = widget.empleado['fecha_presentacion_certificado'];
+    if (fc is String && fc.length >= 10) {
+      _fechaCertificado = DateTime.tryParse(fc.substring(0, 10));
+    }
     _afpSeleccionada = widget.empleado['afp'];
     if (_afpSeleccionada != null && !_afpListAdmin.contains(_afpSeleccionada)) {
       _afpSeleccionada = null;
@@ -100,6 +135,171 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     _equipoSeleccionado = {};
     _todosLosTrabajadores = [];
     _calcularMeses();
+    _cargarFechaVencimientoInicial();
+    _cargarDocumentos();
+    _turnoSeleccionado = widget.empleado['turno'] ?? 'Turno Fijo';
+    _cargarTurnos();
+  }
+
+  void _cargarFechaVencimientoInicial() {
+    final fv = widget.empleado['fecha_vencimiento'];
+    if (fv != null && fv is String) {
+      final p = fv.split('/');
+      if (p.length == 3) {
+        _fechaVencimientoActual = DateTime(
+          int.parse(p[2]),
+          int.parse(p[1]),
+          int.parse(p[0]),
+        );
+      }
+    }
+  }
+
+  // ── Cargar documentos guardados del perfil ────────────────
+  Future<void> _cargarDocumentos() async {
+    setState(() => _cargandoDocumentos = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final idEmple = widget.empleado['id_empleado'];
+      final response = await http.get(
+        Uri.parse('$_apiUrlFichaAdmin/admin/documentos?persona_id=$idEmple'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        setState(() => _documentos = data['documentos'] ?? []);
+      }
+    } catch (_) {
+      // silencioso: si falla, simplemente se muestra la lista vacia
+    } finally {
+      setState(() => _cargandoDocumentos = false);
+    }
+  }
+
+  // ── Turnos: lista cerrada (viene del backend) y asignacion ──
+  Future<void> _cargarTurnos() async {
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.get(
+        Uri.parse('$_apiUrlFichaAdmin/admin/turnos'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && mounted) {
+        setState(() => _turnosDisponibles = data['turnos'] ?? []);
+      }
+    } catch (_) {
+      // silencioso: sin la lista, el selector queda vacio
+    }
+  }
+
+  Future<void> _guardarTurno() async {
+    if (_turnoSeleccionado == null) {
+      setState(() {
+        _exitoTurno = false;
+        _mensajeTurno = 'Selecciona un turno';
+      });
+      return;
+    }
+    setState(() {
+      _guardandoTurno = true;
+      _mensajeTurno = '';
+    });
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.put(
+        Uri.parse('$_apiUrlFichaAdmin/admin/turnos'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'persona_id': widget.empleado['id_empleado'],
+          'turno': _turnoSeleccionado,
+        }),
+      );
+      final data = jsonDecode(response.body);
+      setState(() {
+        _exitoTurno = data['success'] == true;
+        _mensajeTurno =
+            data['mensaje'] ??
+            (_exitoTurno
+                ? 'Turno asignado correctamente'
+                : 'Error al asignar el turno');
+        if (_exitoTurno) {
+          _empleadoActual = {
+            ..._empleadoActual,
+            'turno': _turnoSeleccionado,
+            'turno_horario': data['horario'] ?? '',
+          };
+        }
+      });
+    } catch (_) {
+      setState(() {
+        _exitoTurno = false;
+        _mensajeTurno = 'No se pudo conectar al servidor';
+      });
+    } finally {
+      setState(() => _guardandoTurno = false);
+    }
+  }
+
+  void _descargarBytes(Uint8List bytes, String nombreArchivo) {
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute('download', nombreArchivo)
+      ..click();
+    html.Url.revokeObjectUrl(url);
+  }
+
+  Future<void> _descargarDocumento(
+    int documentoId,
+    String tipoDocumento,
+  ) async {
+    setState(() => _descargandoDocumentoId = documentoId);
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.get(
+        Uri.parse('$_apiUrlFichaAdmin/admin/documentos/$documentoId/descargar'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200 &&
+          response.headers['content-type']?.contains('json') != true) {
+        // ignore: undefined_prefixed_name
+        // ignore: avoid_web_libraries_in_flutter
+        // Descarga via blob (misma logica usada en el resto de la app)
+        // se hace mediante dart:html, importado abajo del archivo
+        _descargarBytes(
+          response.bodyBytes,
+          '${tipoDocumento.toLowerCase()}_$documentoId.pdf',
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo descargar el documento'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo conectar al servidor'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _descargandoDocumentoId = null);
+    }
   }
 
   @override
@@ -234,7 +434,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     if (meses == null || meses < 0 || meses > 600) {
       setState(() {
         _exito = false;
-        _mensaje = 'Los meses deben ser un numero entre 0 y 600';
+        _mensaje = 'Los meses deben ser un número entre 0 y 600';
       });
       return;
     }
@@ -249,6 +449,13 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       setState(() {
         _exito = false;
         _mensaje = 'Debes adjuntar el certificado AFP en formato PDF';
+      });
+      return;
+    }
+    if (meses > 0 && _fechaCertificado == null) {
+      setState(() {
+        _exito = false;
+        _mensaje = 'Debes indicar la fecha de presentación del certificado';
       });
       return;
     }
@@ -283,6 +490,11 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
         body: jsonEncode({
           'meses_cotizados_previos': meses,
           'afp': _afpSeleccionada,
+          if (meses > 0 && _fechaCertificado != null)
+            'fecha_presentacion_certificado':
+                '${_fechaCertificado!.year.toString().padLeft(4, '0')}-'
+                '${_fechaCertificado!.month.toString().padLeft(2, '0')}-'
+                '${_fechaCertificado!.day.toString().padLeft(2, '0')}',
         }),
       );
       final data = jsonDecode(response.body);
@@ -373,6 +585,62 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     }
   }
 
+  // ── Guardar Fecha de Vencimiento del Contrato (Plazo Fijo) ──
+  Future<void> _guardarFechaVencimiento() async {
+    if (_fechaVencimientoNueva == null) {
+      setState(() {
+        _exitoVencimiento = false;
+        _mensajeVencimiento = 'Selecciona la fecha de vencimiento';
+      });
+      return;
+    }
+    final contratoId = _empleadoActual['contrato_id'];
+    if (contratoId == null) {
+      setState(() {
+        _exitoVencimiento = false;
+        _mensajeVencimiento =
+            'No se encontró el contrato activo de este trabajador';
+      });
+      return;
+    }
+    setState(() {
+      _guardandoVencimiento = true;
+      _mensajeVencimiento = '';
+    });
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.put(
+        Uri.parse('$_apiUrlFichaAdmin/admin/contrato/fecha-vencimiento'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'contrato_id': contratoId,
+          'fecha_vencimiento': _fmtFecha(_fechaVencimientoNueva!),
+        }),
+      );
+      final data = jsonDecode(response.body);
+      setState(() {
+        _exitoVencimiento = data['success'] == true;
+        _mensajeVencimiento = _exitoVencimiento
+            ? 'Fecha de vencimiento registrada correctamente'
+            : data['mensaje'] ?? 'Error al guardar';
+        if (_exitoVencimiento) {
+          _fechaVencimientoActual = _fechaVencimientoNueva;
+          _fechaVencimientoNueva = null;
+        }
+      });
+    } catch (_) {
+      setState(() {
+        _exitoVencimiento = false;
+        _mensajeVencimiento = 'No se pudo conectar al servidor';
+      });
+    } finally {
+      setState(() => _guardandoVencimiento = false);
+    }
+  }
+
   // ── Guardar edicion datos personales ─────────────────────
   Future<void> _guardarEdicion() async {
     final camposObligatorios = <String, TextEditingController>{
@@ -405,7 +673,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       setState(() {
         _exitoEdicion = false;
         _mensajeEdicion =
-            'El sueldo no puede ser menor al salario minimo (\$$_salarioMinimo)';
+            'El sueldo no puede ser menor al salario mínimo (\$$_salarioMinimo)';
       });
       return;
     }
@@ -567,9 +835,9 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                       _FilaDato(label: 'RUT', valor: e['rut'] ?? '—'),
                       _FilaDato(label: 'Cargo', valor: e['cargo'] ?? '—'),
                       _FilaDato(label: 'Correo', valor: e['correo'] ?? '—'),
-                      _FilaDato(label: 'Telefono', valor: e['telefono'] ?? '—'),
+                      _FilaDato(label: 'Teléfono', valor: e['telefono'] ?? '—'),
                       _FilaDato(
-                        label: 'Direccion',
+                        label: 'Dirección',
                         valor: e['direccion'] ?? '—',
                       ),
                       _FilaDato(label: 'Salud', valor: e['tipo_salud'] ?? '—'),
@@ -578,7 +846,12 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         valor: e['tipo_contrato'] ?? '—',
                       ),
                       _FilaDato(
-                        label: 'Sueldo',
+                        label: 'Turno',
+                        valor:
+                            '${e['turno'] ?? 'Turno Fijo'} · ${e['turno_horario'] ?? 'Horario a definir contractualmente'}',
+                      ),
+                      _FilaDato(
+                        label: 'Sueldo base',
                         valor: e['sueldo_base'] != null
                             ? '\$${e['sueldo_base']}'
                             : '—',
@@ -588,9 +861,9 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         valor: e['fecha_ingreso'] ?? '—',
                       ),
                       _FilaDato(
-                        label: 'Meses en la clinica',
+                        label: 'Meses en la clínica',
                         valor:
-                            '$_mesesClinica meses (${_mesesClinica ~/ 12} anos)',
+                            '$_mesesClinica meses (${_mesesClinica ~/ 12} años)',
                       ),
                       const SizedBox(height: 16),
 
@@ -603,7 +876,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                             onPressed: _abrirFormulario,
                             icon: const Icon(Icons.edit_outlined, size: 18),
                             label: const Text(
-                              'Ingresar informacion al usuario',
+                              'Ingresar información al usuario',
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                             style: OutlinedButton.styleFrom(
@@ -625,7 +898,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              'Editar Informacion',
+                              'Editar Información',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -709,13 +982,13 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
 
                         // Contacto
                         _CampoEdicion(
-                          label: 'Telefono (+56 9 XXXX XXXX)',
+                          label: 'Teléfono (+56 9 XXXX XXXX)',
                           controller: _telefonoCtrl,
                           keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 12),
                         _CampoEdicion(
-                          label: 'Direccion',
+                          label: 'Dirección',
                           controller: _direccionCtrl,
                           maxLines: 2,
                         ),
@@ -748,7 +1021,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         // Salud
                         DropdownButtonFormField<String>(
                           value: _saludEdicion,
-                          decoration: _dropDeco('Institucion de salud'),
+                          decoration: _dropDeco('Institución de salud'),
                           items: _institucionesSalud
                               .map(
                                 (s) =>
@@ -834,7 +1107,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         if (_fechaNacimientoEdicion != null) ...[
                           const SizedBox(height: 6),
                           Text(
-                            'Edad: ${_calcularEdad()} anos',
+                            'Edad: ${_calcularEdad()} años',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF0D9488),
@@ -846,7 +1119,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         // Discapacidad
                         _CampoEdicion(
                           label:
-                              'Informacion discapacidad (Ley 20.422) — opcional',
+                              'Información discapacidad (Ley 20.422) — opcional',
                           controller: _discapacidadCtrl,
                           maxLines: 2,
                         ),
@@ -961,6 +1234,596 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                 ),
                 const SizedBox(height: 20),
 
+                // ── Documentos del perfil ───────────────────
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.folder_outlined,
+                            color: Color(0xFF001E42),
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Documentos',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF001E42),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20),
+                      if (!_cargandoDocumentos && _documentos.isNotEmpty) ...[
+                        Builder(
+                          builder: (context) {
+                            final tipos =
+                                _documentos
+                                    .map(
+                                      (d) =>
+                                          d['tipo_documento'] as String? ??
+                                          'Otro',
+                                    )
+                                    .toSet()
+                                    .toList()
+                                  ..sort();
+                            if (tipos.length <= 1) return const SizedBox();
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  ChoiceChip(
+                                    label: const Text('Todos'),
+                                    selected: _filtroTipoDocumento == null,
+                                    onSelected: (_) => setState(
+                                      () => _filtroTipoDocumento = null,
+                                    ),
+                                    selectedColor: const Color(0xFF001E42),
+                                    labelStyle: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: _filtroTipoDocumento == null
+                                          ? Colors.white
+                                          : const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  ...tipos.map(
+                                    (t) => ChoiceChip(
+                                      label: Text(t),
+                                      selected: _filtroTipoDocumento == t,
+                                      onSelected: (_) => setState(
+                                        () => _filtroTipoDocumento = t,
+                                      ),
+                                      selectedColor: const Color(0xFF001E42),
+                                      labelStyle: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: _filtroTipoDocumento == t
+                                            ? Colors.white
+                                            : const Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        Builder(
+                          builder: (context) {
+                            final periodos =
+                                _documentos
+                                    .map(
+                                      (d) => _periodoDesdeFechaCarga(
+                                        d['fecha_carga'],
+                                      ),
+                                    )
+                                    .whereType<String>()
+                                    .toSet()
+                                    .toList()
+                                  ..sort((a, b) {
+                                    final pa = a.split('/');
+                                    final pb = b.split('/');
+                                    final da = DateTime(
+                                      int.parse(pa[1]),
+                                      int.parse(pa[0]),
+                                    );
+                                    final db = DateTime(
+                                      int.parse(pb[1]),
+                                      int.parse(pb[0]),
+                                    );
+                                    return db.compareTo(da);
+                                  });
+                            if (periodos.length <= 1) return const SizedBox();
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  ChoiceChip(
+                                    label: const Text('Todos los períodos'),
+                                    selected: _filtroPeriodoDocumento == null,
+                                    onSelected: (_) => setState(
+                                      () => _filtroPeriodoDocumento = null,
+                                    ),
+                                    selectedColor: const Color(0xFF0D9488),
+                                    labelStyle: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: _filtroPeriodoDocumento == null
+                                          ? Colors.white
+                                          : const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  ...periodos.map(
+                                    (pe) => ChoiceChip(
+                                      label: Text(pe),
+                                      selected: _filtroPeriodoDocumento == pe,
+                                      onSelected: (_) => setState(
+                                        () => _filtroPeriodoDocumento = pe,
+                                      ),
+                                      selectedColor: const Color(0xFF0D9488),
+                                      labelStyle: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: _filtroPeriodoDocumento == pe
+                                            ? Colors.white
+                                            : const Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                      if (_cargandoDocumentos)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      else if (_documentos.isEmpty)
+                        const Text(
+                          'Este trabajador aún no tiene documentos guardados.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        )
+                      else if (_documentos
+                          .where(
+                            (d) =>
+                                (_filtroTipoDocumento == null ||
+                                    d['tipo_documento'] ==
+                                        _filtroTipoDocumento) &&
+                                (_filtroPeriodoDocumento == null ||
+                                    _periodoDesdeFechaCarga(d['fecha_carga']) ==
+                                        _filtroPeriodoDocumento),
+                          )
+                          .isEmpty)
+                        const Text(
+                          'No hay documentos de este tipo para este trabajador.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        )
+                      else
+                        ..._documentos
+                            .where(
+                              (d) =>
+                                  (_filtroTipoDocumento == null ||
+                                      d['tipo_documento'] ==
+                                          _filtroTipoDocumento) &&
+                                  (_filtroPeriodoDocumento == null ||
+                                      _periodoDesdeFechaCarga(
+                                            d['fecha_carga'],
+                                          ) ==
+                                          _filtroPeriodoDocumento),
+                            )
+                            .map((d) {
+                              final documentoId = d['documento_id'] as int;
+                              final descargando =
+                                  _descargandoDocumentoId == documentoId;
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.picture_as_pdf_outlined,
+                                      color: Color(0xFFDC2626),
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            d['tipo_documento'] ?? '—',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13.5,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Cargado el ${d['fecha_carga']} · por ${d['cargado_por']}',
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                              color: Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: descargando
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.download_outlined,
+                                              color: Color(0xFF001E42),
+                                            ),
+                                      onPressed: descargando
+                                          ? null
+                                          : () => _descargarDocumento(
+                                              documentoId,
+                                              d['tipo_documento'] ??
+                                                  'documento',
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ── Turno del trabajador ────────────────────
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.schedule_outlined,
+                            color: Color(0xFF001E42),
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Turno',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF001E42),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 20),
+                      const Text(
+                        'Asigna el turno de este trabajador. Si no tiene un turno rotativo, queda como Turno Fijo.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF64748B),
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        value:
+                            _turnosDisponibles.any(
+                              (t) => t['turno'] == _turnoSeleccionado,
+                            )
+                            ? _turnoSeleccionado
+                            : null,
+                        decoration: _dropDeco('Turno'),
+                        items: _turnosDisponibles
+                            .map<DropdownMenuItem<String>>(
+                              (t) => DropdownMenuItem<String>(
+                                value: t['turno'] as String,
+                                child: Text(
+                                  '${t['turno']} · ${t['horario']}',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) => setState(() {
+                          _turnoSeleccionado = v;
+                          _mensajeTurno = '';
+                        }),
+                      ),
+                      const SizedBox(height: 14),
+                      if (_mensajeTurno.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: _exitoTurno
+                                ? Colors.green[50]
+                                : Colors.red[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _exitoTurno
+                                  ? Colors.green[200]!
+                                  : Colors.red[200]!,
+                            ),
+                          ),
+                          child: Text(
+                            _mensajeTurno,
+                            style: TextStyle(
+                              color: _exitoTurno ? Colors.green : Colors.red,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: ElevatedButton.icon(
+                          onPressed: _guardandoTurno ? null : _guardarTurno,
+                          icon: _guardandoTurno
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.save_outlined, size: 18),
+                          label: Text(
+                            _guardandoTurno ? 'Guardando...' : 'Guardar Turno',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF001E42),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Vigencia del Contrato (solo Plazo Fijo) ──
+                if ((e['tipo_contrato'] ?? '') == 'Plazo Fijo')
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.event_busy_outlined,
+                              color: Color(0xFFD97706),
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Vigencia del Contrato',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF001E42),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 20),
+                        const Text(
+                          'Este trabajador tiene contrato a Plazo Fijo. Registra la fecha de vencimiento para que el sistema genere alertas automáticas a 30 y 15 días del vencimiento.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF64748B),
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        if (_fechaVencimientoActual != null)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFBEB),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Fecha de vencimiento actual: ${_fmtFecha(_fechaVencimientoActual!)}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF92400E),
+                              ),
+                            ),
+                          ),
+                        _SelectorFechaEdicion(
+                          label: 'Nueva fecha de vencimiento',
+                          fecha: _fechaVencimientoNueva,
+                          onTap: () async {
+                            DateTime? fechaIngresoContrato;
+                            final fi = e['fecha_ingreso'];
+                            if (fi != null) {
+                              final p = (fi as String).split('/');
+                              if (p.length == 3) {
+                                fechaIngresoContrato = DateTime(
+                                  int.parse(p[2]),
+                                  int.parse(p[1]),
+                                  int.parse(p[0]),
+                                );
+                              }
+                            }
+                            final primerDiaValido =
+                                (fechaIngresoContrato ?? DateTime(2015)).add(
+                                  const Duration(days: 1),
+                                );
+                            final f = await showDatePicker(
+                              context: context,
+                              initialDate:
+                                  _fechaVencimientoNueva ??
+                                  DateTime.now().add(const Duration(days: 90)),
+                              firstDate: primerDiaValido,
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 3650),
+                              ),
+                              builder: (ctx, child) => Theme(
+                                data: Theme.of(ctx).copyWith(
+                                  colorScheme: const ColorScheme.light(
+                                    primary: Color(0xFF001E42),
+                                    onPrimary: Colors.white,
+                                  ),
+                                ),
+                                child: child!,
+                              ),
+                            );
+                            if (f != null)
+                              setState(() => _fechaVencimientoNueva = f);
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                        if (_mensajeVencimiento.isNotEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: _exitoVencimiento
+                                  ? Colors.green[50]
+                                  : Colors.red[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _exitoVencimiento
+                                    ? Colors.green[200]!
+                                    : Colors.red[200]!,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _exitoVencimiento
+                                      ? Icons.check_circle_outline
+                                      : Icons.error_outline,
+                                  color: _exitoVencimiento
+                                      ? Colors.green
+                                      : Colors.red,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _mensajeVencimiento,
+                                    style: TextStyle(
+                                      color: _exitoVencimiento
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 46,
+                          child: ElevatedButton.icon(
+                            onPressed: _guardandoVencimiento
+                                ? null
+                                : _guardarFechaVencimiento,
+                            icon: _guardandoVencimiento
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.event_available_outlined,
+                                    size: 18,
+                                  ),
+                            label: Text(
+                              _guardandoVencimiento
+                                  ? 'Guardando...'
+                                  : 'Registrar Fecha de Vencimiento',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFD97706),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // ── Cotizaciones previas ───────────────────
                 Container(
                   width: double.infinity,
@@ -993,7 +1856,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                       ),
                       const Divider(height: 20),
                       const Text(
-                        'Ingresa los meses cotizados antes de ingresar a la clinica, segun certificado AFP.',
+                        'Ingresa los meses cotizados antes de ingresar a la clínica, según certificado AFP.',
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF64748B),
@@ -1009,8 +1872,8 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         onChanged: (_) => setState(() => _calcularMeses()),
                         decoration: InputDecoration(
                           labelText: 'Meses de cotizaciones previas *',
-                          hintText: 'Ej: 48 (equivale a 4 anos)',
-                          helperText: 'Numero entero entre 0 y 600',
+                          hintText: 'Ej: 48 (equivale a 4 años)',
+                          helperText: 'Número entero entre 0 y 600',
                           filled: true,
                           fillColor: const Color(0xFFF8FAFC),
                           border: OutlineInputBorder(
@@ -1032,6 +1895,41 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      if ((int.tryParse(_mesesCtrl.text) ?? 0) > 0) ...[
+                        _SelectorFechaEdicion(
+                          label: 'Fecha de presentación del certificado *',
+                          fecha: _fechaCertificado,
+                          onTap: () async {
+                            final hoy = DateTime.now();
+                            final f = await showDatePicker(
+                              context: context,
+                              initialDate: _fechaCertificado ?? hoy,
+                              firstDate: DateTime(1980),
+                              lastDate: hoy,
+                              builder: (ctx, child) => Theme(
+                                data: Theme.of(ctx).copyWith(
+                                  colorScheme: const ColorScheme.light(
+                                    primary: Color(0xFF001E42),
+                                    onPrimary: Colors.white,
+                                  ),
+                                ),
+                                child: child!,
+                              ),
+                            );
+                            if (f != null)
+                              setState(() => _fechaCertificado = f);
+                          },
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Los días progresivos se devengan desde el aniversario de contrato posterior o igual a esta fecha.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(14),
@@ -1052,7 +1950,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
-                                  'Meses previos (max 120):',
+                                  'Meses previos (máx. 120):',
                                   style: TextStyle(fontSize: 13),
                                 ),
                                 Text(
@@ -1068,7 +1966,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
-                                  'Meses en la clinica:',
+                                  'Meses en la clínica:',
                                   style: TextStyle(fontSize: 13),
                                 ),
                                 Text(
@@ -1115,8 +2013,8 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                                 Expanded(
                                   child: Text(
                                     _cumpleProgresivos
-                                        ? 'Cumple 120 meses — tiene derecho a dias progresivos (Art. 68)'
-                                        : 'No cumple 120 meses aun — faltan ${120 - _totalMeses} meses',
+                                        ? 'Cumple 120 meses — tiene derecho a días progresivos (Art. 68)'
+                                        : 'No cumple 120 meses aún — faltan ${120 - _totalMeses} meses',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: _cumpleProgresivos
@@ -1132,7 +2030,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Certificado AFP (PDF, max 5 MB)',
+                        'Certificado AFP (PDF, máx. 5 MB)',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -1356,7 +2254,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                           ),
                           SizedBox(width: 8),
                           Text(
-                            'Asignacion de Rol',
+                            'Asignación de Rol',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -1387,7 +2285,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                             ),
                             SizedBox(height: 6),
                             Text(
-                              '• Jefe: puede ver informacion de su area.',
+                              '• Jefe: puede ver información de su área.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF1E3A8A),
@@ -1395,7 +2293,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              '• Usuario: solo ve su propia informacion.',
+                              '• Usuario: solo ve su propia información.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF1E3A8A),

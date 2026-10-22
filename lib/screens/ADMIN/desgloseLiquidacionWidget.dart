@@ -36,6 +36,12 @@ class ItemDesglose extends StatelessWidget {
   final bool destacado;
   final String? subtitulo;
 
+  /// Informacion completa para la ventana del icono "i": nombre,
+  /// descripcion, base de calculo, valor/formula aplicada y resultado.
+  /// Si no viene, la ventana muestra al menos el nombre, la
+  /// descripcion y el resultado del propio item.
+  final Map<String, dynamic>? info;
+
   const ItemDesglose({
     super.key,
     required this.titulo,
@@ -44,24 +50,117 @@ class ItemDesglose extends StatelessWidget {
     this.esDescuento = false,
     this.destacado = false,
     this.subtitulo,
+    this.info,
   });
 
+  Widget _seccionInfo(String etiqueta, String texto) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            etiqueta.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.8,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            texto,
+            style: const TextStyle(
+              fontSize: 13.5,
+              height: 1.4,
+              color: Color(0xFF334155),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _mostrarDescripcion(BuildContext context) {
+    final nombre = (info?['nombre'] ?? titulo).toString();
+    final descripcionTexto =
+        (info?['descripcion'] ??
+                descripcion ??
+                'Descripción del ítem no disponible por el momento.')
+            .toString();
+    final baseCalculo = info?['base_calculo']?.toString();
+    final valorFormula = info?['valor_o_formula']?.toString();
+    final resultado = info?['resultado_clp'] ?? monto;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Text(
-          titulo,
+          nombre,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Color(0xFF001E42),
           ),
         ),
-        content: Text(
-          descripcion ?? 'Descripción del ítem no disponible por el momento.',
-          style: const TextStyle(fontSize: 14, color: Color(0xFF475569)),
+        content: SizedBox(
+          width: 440,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _seccionInfo('Qué representa', descripcionTexto),
+                if (baseCalculo != null && baseCalculo.isNotEmpty)
+                  _seccionInfo('Base de cálculo', baseCalculo),
+                if (valorFormula != null && valorFormula.isNotEmpty)
+                  _seccionInfo(
+                    'Valor ingresado / fórmula aplicada',
+                    valorFormula,
+                  ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: esDescuento
+                        ? const Color(0xFFFEF2F2)
+                        : const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: esDescuento
+                          ? const Color(0xFFFECACA)
+                          : const Color(0xFFA7F3D0),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Resultado',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                      Text(
+                        '${esDescuento ? "-" : ""}\$${formatearMiles(resultado)} CLP',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: esDescuento
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFF059669),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         actions: [
           TextButton(
@@ -156,6 +255,8 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
     final descripciones = resultado['descripciones'] as Map<String, dynamic>;
     final detalleHaberes =
         resultado['detalle_haberes'] as Map<String, dynamic>? ?? {};
+    final infoConceptos =
+        resultado['info_conceptos'] as Map<String, dynamic>? ?? {};
 
     String? resumenBonos(dynamic detalle) {
       if (detalle == null || (detalle as List).isEmpty) return null;
@@ -254,6 +355,7 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
                 ? 'Sueldo proporcional'
                 : 'Sueldo base',
             monto: items['sueldo_base'],
+            info: infoConceptos['sueldo_base'],
             descripcion: descripciones['sueldo_base'],
             subtitulo: detalleHaberes['es_proporcional'] == true
                 ? 'En función de ${detalleHaberes['detalle_proporcional']}'
@@ -262,6 +364,7 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
           ItemDesglose(
             titulo: 'Bonos imponibles',
             monto: items['bonos_imponibles'],
+            info: infoConceptos['bonos_imponibles'],
             descripcion: descripciones['bonos_imponibles'],
             subtitulo: subtituloBonosImponibles.isNotEmpty
                 ? subtituloBonosImponibles
@@ -270,6 +373,7 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
           ItemDesglose(
             titulo: 'Movilización y Colación',
             monto: items['movilizacion_colacion'],
+            info: infoConceptos['movilizacion_colacion'],
             descripcion: descripciones['bonos_no_imponibles'],
             subtitulo:
                 ((detalleHaberes['colacion_total'] ?? 0) > 0 ||
@@ -281,12 +385,14 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
             ItemDesglose(
               titulo: 'Otros bonos no imponibles',
               monto: items['bonos_no_imponibles_otros'],
+              info: infoConceptos['otros_bonos_no_imponibles'],
               descripcion:
                   'Bonos condicionales o excepcionales clasificados como no imponibles este período.',
             ),
           ItemDesglose(
             titulo: 'Horas extras',
             monto: items['horas_extras'],
+            info: infoConceptos['horas_extras'],
             descripcion: descripciones['horas_extras'],
             subtitulo: (detalleHaberes['horas_extra_horas'] ?? 0) > 0
                 ? '${detalleHaberes['horas_extra_horas']} horas extra ingresadas'
@@ -296,18 +402,21 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
             ItemDesglose(
               titulo: 'Excedente movilización/colación (imponible)',
               monto: items['excedente_no_imponible'],
+              info: infoConceptos['excedente_no_imponible'],
               descripcion: descripciones['excedente_no_imponible'],
             ),
           if ((items['gratificacion'] ?? 0) > 0)
             ItemDesglose(
               titulo: 'Gratificación legal',
               monto: items['gratificacion'],
+              info: infoConceptos['gratificacion'],
               descripcion: descripciones['gratificacion'],
             ),
           if ((items['descuento_atraso'] ?? 0) > 0)
             ItemDesglose(
               titulo: 'Descuento de atraso',
               monto: items['descuento_atraso'],
+              info: infoConceptos['descuento_atraso'],
               descripcion: descripciones['descuento_retraso'],
               esDescuento: true,
               subtitulo:
@@ -317,6 +426,7 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
           ItemDesglose(
             titulo: 'Total haberes',
             monto: resultado['total_haberes'],
+            info: infoConceptos['total_haberes'],
             descripcion:
                 'Suma de todos los conceptos que se pagan al trabajador este período.',
             destacado: true,
@@ -338,6 +448,7 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
               ItemDesglose(
                 titulo: 'Total Imponible AFP y Salud',
                 monto: resultado['bases_calculo']['total_imponible_afp_salud'],
+                info: infoConceptos['base_afp_salud'],
                 descripcion:
                     'Base sobre la que se calculan los descuentos de AFP y Salud, limitada al tope configurado.',
               ),
@@ -345,6 +456,7 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
               ItemDesglose(
                 titulo: 'Total Imponible AFC',
                 monto: resultado['bases_calculo']['total_imponible_afc'],
+                info: infoConceptos['base_afc'],
                 descripcion:
                     'Base sobre la que se calcula el Seguro de Cesantía, limitada al tope configurado.',
               ),
@@ -352,6 +464,7 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
               ItemDesglose(
                 titulo: 'Total Tributable',
                 monto: resultado['bases_calculo']['total_tributable'],
+                info: infoConceptos['base_tributable'],
                 descripcion:
                     'Total imponible menos AFP, Salud y AFC del trabajador. Es la base sobre la que se calcula el Impuesto Único.',
               ),
@@ -371,24 +484,28 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
           ItemDesglose(
             titulo: 'AFP',
             monto: items['descuento_afp'],
+            info: infoConceptos['descuento_afp'],
             descripcion: descripciones['descuento_afp'],
             esDescuento: true,
           ),
           ItemDesglose(
             titulo: 'Salud',
             monto: items['descuento_salud'],
+            info: infoConceptos['descuento_salud'],
             descripcion: descripciones['descuento_salud'],
             esDescuento: true,
           ),
           ItemDesglose(
             titulo: 'Seguro de Cesantía (AFC)',
             monto: items['descuento_afc'],
+            info: infoConceptos['descuento_afc'],
             descripcion: descripciones['descuento_afc'],
             esDescuento: true,
           ),
           ItemDesglose(
             titulo: 'Impuesto único',
             monto: items['impuesto_unico'],
+            info: infoConceptos['impuesto_unico'],
             descripcion: resultado['impuesto_disponible'] == true
                 ? descripciones['impuesto_unico']
                 : '${descripciones['impuesto_unico']} (Falta cargar la UTM del período; se muestra como \$0 mientras tanto).',
@@ -398,20 +515,22 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
             ItemDesglose(
               titulo: 'Préstamo',
               monto: items['descuento_prestamo'],
+              info: infoConceptos['descuento_prestamo'],
               descripcion: descripciones['descuento_prestamo'],
               esDescuento: true,
             ),
-          if ((items['descuento_anticipo'] ?? 0) > 0)
-            ItemDesglose(
-              titulo: 'Anticipo de Sueldo',
-              monto: items['descuento_anticipo'],
-              descripcion: descripciones['descuento_anticipo'],
-              esDescuento: true,
-            ),
+          ItemDesglose(
+            titulo: 'Anticipo de Sueldo',
+            monto: items['descuento_anticipo'] ?? 0,
+            info: infoConceptos['descuento_anticipo'],
+            descripcion: descripciones['descuento_anticipo'],
+            esDescuento: true,
+          ),
           const SizedBox(height: 4),
           ItemDesglose(
             titulo: 'Total descuentos',
             monto: resultado['total_descuentos'],
+            info: infoConceptos['total_descuentos'],
             descripcion: 'Suma de todos los descuentos aplicados este período.',
             esDescuento: true,
             destacado: true,
@@ -432,6 +551,7 @@ class TarjetaDesgloseLiquidacion extends StatelessWidget {
                 ItemDesglose(
                   titulo: 'LÍQUIDO A PAGAR',
                   monto: resultado['liquido_a_pagar'],
+                  info: infoConceptos['liquido_a_pagar'],
                   descripcion: descripciones['liquido_a_pagar'],
                   destacado: true,
                 ),

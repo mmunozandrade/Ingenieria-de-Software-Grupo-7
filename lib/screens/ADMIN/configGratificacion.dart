@@ -319,17 +319,8 @@ class _ConfigGratificacionScreenState extends State<ConfigGratificacionScreen> {
                                       ),
                                     ),
                                   ],
-                                  // Deshabilitado: el cambio de modalidad se
-                                  // habilitara en el Incremento 3.
-                                  onChanged: null,
-                                ),
-                                const SizedBox(height: 6),
-                                const Text(
-                                  'Configurable para el incremento 3',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red,
+                                  onChanged: (v) => setState(
+                                    () => _modalidad = v ?? _modalidad,
                                   ),
                                 ),
                                 const SizedBox(height: 14),
