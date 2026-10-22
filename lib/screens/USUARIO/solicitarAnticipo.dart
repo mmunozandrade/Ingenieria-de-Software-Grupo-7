@@ -67,7 +67,7 @@ class _SolicitarAnticipoScreenState extends State<SolicitarAnticipoScreen> {
     if (monto == null || monto <= 0) {
       setState(() {
         _exito = false;
-        _mensaje = 'Ingresa un monto valido, mayor a 0';
+        _mensaje = 'Ingresa un monto válido, mayor a 0';
       });
       return;
     }
@@ -89,7 +89,7 @@ class _SolicitarAnticipoScreenState extends State<SolicitarAnticipoScreen> {
       setState(() {
         _exito = data['success'] == true;
         _mensaje = _exito
-            ? 'Solicitud enviada correctamente, queda pendiente de aprobacion'
+            ? 'Solicitud enviada correctamente, queda pendiente de aprobación'
             : data['mensaje'] ?? 'Error al solicitar';
         if (_exito) _montoCtrl.clear();
       });
@@ -171,8 +171,8 @@ class _SolicitarAnticipoScreenState extends State<SolicitarAnticipoScreen> {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        'Puedes solicitar un anticipo excepcional si cuentas con al menos 15 dias trabajados en el mes. '
-                        'El monto maximo es el 30% de tu remuneracion tributable del periodo. Queda pendiente de aprobacion del administrador, '
+                        'Puedes solicitar un anticipo excepcional si cuentas con al menos 15 días trabajados en el mes. '
+                        'El monto máximo es el 30% de tu remuneración tributable del periodo. Queda pendiente de aprobación del administrador, '
                         'y solo puedes tener 1 solicitud excepcional activa por mes.',
                         style: TextStyle(
                           fontSize: 12.5,
@@ -314,7 +314,7 @@ class _SolicitarAnticipoScreenState extends State<SolicitarAnticipoScreen> {
                         )
                       else if (_misAnticipos.isEmpty)
                         const Text(
-                          'Aun no tienes solicitudes de anticipo.',
+                          'Aún no tienes solicitudes de anticipo.',
                           style: TextStyle(
                             color: Color(0xFF94A3B8),
                             fontSize: 13,
