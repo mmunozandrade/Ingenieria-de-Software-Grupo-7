@@ -182,7 +182,7 @@ class _PanelResumenJefeState extends State<PanelResumenJefe> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
-                                    'Panel Resumen de Area',
+                                    'Panel Resumen de Área',
                                     style: TextStyle(
                                       color: Colors.white70,
                                       fontSize: 13,
@@ -207,7 +207,7 @@ class _PanelResumenJefeState extends State<PanelResumenJefe> {
                                       ),
                                       const SizedBox(width: 6),
                                       Text(
-                                        '${_trabajadores.length} trabajador${_trabajadores.length == 1 ? '' : 'es'} en el area',
+                                        '${_trabajadores.length} trabajador${_trabajadores.length == 1 ? '' : 'es'} en el área',
                                         style: const TextStyle(
                                           color: Colors.white70,
                                           fontSize: 13,
@@ -258,7 +258,7 @@ class _PanelResumenJefeState extends State<PanelResumenJefe> {
                               _SeccionTitulo(
                                 icono: Icons.warning_amber_outlined,
                                 titulo:
-                                    'Contratos por Vencer (proximos 30 dias)',
+                                    'Contratos por Vencer (próximos 30 días)',
                                 color: const Color(0xFFEF4444),
                               ),
                               const SizedBox(height: 12),
@@ -305,7 +305,7 @@ class _PanelResumenJefeState extends State<PanelResumenJefe> {
                             const SizedBox(height: 12),
                             if (_enVacaciones.isEmpty)
                               _MensajeVacio(
-                                texto: 'Nadie esta de vacaciones actualmente',
+                                texto: 'Nadie está de vacaciones actualmente',
                               )
                             else
                               ..._enVacaciones.map(
@@ -320,13 +320,13 @@ class _PanelResumenJefeState extends State<PanelResumenJefe> {
                             // Lista trabajadores
                             _SeccionTitulo(
                               icono: Icons.people_outline,
-                              titulo: 'Trabajadores del Area',
+                              titulo: 'Trabajadores del Área',
                               color: const Color(0xFF185FA5),
                             ),
                             const SizedBox(height: 12),
                             if (_trabajadores.isEmpty)
                               _MensajeVacio(
-                                texto: 'No hay trabajadores en el area',
+                                texto: 'No hay trabajadores en el área',
                               )
                             else
                               ..._trabajadores.map(
@@ -604,7 +604,7 @@ class _TarjetaSolicitud extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$fechaInicio - $fechaFin  |  $diasHabiles dias habiles',
+                  '$fechaInicio - $fechaFin  |  $diasHabiles días hábiles',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF92400E),
@@ -754,7 +754,7 @@ class _TarjetaContrato extends StatelessWidget {
                 ),
               ),
               Text(
-                '$diasResta dias',
+                '$diasResta días',
                 style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
               ),
             ],
