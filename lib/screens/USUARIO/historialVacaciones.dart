@@ -94,7 +94,7 @@ class _HistorialVacacionesState extends State<HistorialVacaciones> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'El sistema no pudo generar el comprobante. Verifique que todos los datos esten completos',
+                'El sistema no pudo generar el comprobante. Verifique que todos los datos estén completos',
               ),
               backgroundColor: Colors.orange,
             ),
@@ -168,7 +168,7 @@ class _HistorialVacacionesState extends State<HistorialVacaciones> {
                     child: Row(
                       children: [
                         const Text(
-                          'Filtrar por ano:',
+                          'Filtrar por año:',
                           style: TextStyle(
                             fontSize: 13,
                             color: Color(0xFF475569),
@@ -352,16 +352,16 @@ class _HistorialVacacionesState extends State<HistorialVacaciones> {
                                       runSpacing: 8,
                                       children: [
                                         _ItemHistorial(
-                                          label: 'Dias habiles',
+                                          label: 'Días hábiles',
                                           valor: '${s['dias_habiles']}',
                                         ),
                                         _ItemHistorial(
-                                          label: 'Fecha solicitud',
+                                          label: 'Fecha de solicitud',
                                           valor: s['fecha_solicitud'] ?? '—',
                                         ),
                                         if (s['fecha_decision'] != null)
                                           _ItemHistorial(
-                                            label: 'Fecha decision',
+                                            label: 'Fecha de decisión',
                                             valor: s['fecha_decision'],
                                           ),
                                       ],
@@ -386,7 +386,7 @@ class _HistorialVacacionesState extends State<HistorialVacaciones> {
                                           ),
                                         ),
                                         child: Text(
-                                          'Observacion: ${s['observacion']}',
+                                          'Observación: ${s['observacion']}',
                                           style: const TextStyle(
                                             fontSize: 12,
                                             color: Color(0xFF475569),
