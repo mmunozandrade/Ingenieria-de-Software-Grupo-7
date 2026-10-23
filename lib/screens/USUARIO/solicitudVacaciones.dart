@@ -1,13 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../auth/inicial.dart';
 import '../../auth/session_service.dart';
-import '../ADMIN/cargaArchivos.dart';
-import '../ADMIN/registroBonos.dart';
-import '../ADMIN/asignacionRoles.dart';
-import '../ADMIN/calculoHextra.dart';
-import 'descargaLiquidacion.dart';
 
 const String _apiUrlVac = 'http://127.0.0.1:8000';
 
@@ -246,87 +240,6 @@ class _SolicitudVacacionesState extends State<SolicitudVacaciones> {
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
-        ),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFF001E42)),
-              child: Text(
-                'Menu Principal',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home_outlined),
-              title: const Text('Inicio'),
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const DashboardScreen()),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today_outlined),
-              title: const Text('Solicitud de Vacaciones'),
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const SolicitudVacaciones()),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long_outlined),
-              title: const Text('Mis Liquidaciones'),
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const DescargaLiquidacion()),
-              ),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.attach_money_outlined),
-              title: const Text('Registro de Bonos'),
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const RegistrarBonos()),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calculate_outlined),
-              title: const Text('Calculo de Horas Extra'),
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const CalculoHextra()),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.manage_accounts_outlined),
-              title: const Text('Asignacion de Roles'),
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const AsignacionRoles()),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.upload_file_outlined),
-              title: const Text('Carga de Archivos'),
-              onTap: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const CargaMasivaArchivosPage(),
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text(
-                'Cerrar Sesión',
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () {},
-            ),
-          ],
         ),
       ),
       body: _cargando
