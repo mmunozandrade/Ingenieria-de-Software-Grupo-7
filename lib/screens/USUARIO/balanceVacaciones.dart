@@ -84,7 +84,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'No tienes dias progresivos disponibles para compensar',
+            'No tienes días progresivos disponibles para compensar',
           ),
           backgroundColor: Colors.orange,
         ),
@@ -105,12 +105,12 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
               errorDias = '';
               final n = int.tryParse(val);
               if (n == null || n <= 0) {
-                errorDias = 'Ingresa un numero entero positivo';
+                errorDias = 'Ingresa un número entero positivo';
                 montoCalculado = 0;
                 diasIngresados = 0;
               } else if (n > diasProgresivos) {
                 errorDias =
-                    'No puede exceder los $diasProgresivos dias progresivos disponibles';
+                    'No puede exceder los $diasProgresivos días progresivos disponibles';
                 montoCalculado = 0;
                 diasIngresados = 0;
               } else {
@@ -129,7 +129,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                 Icon(Icons.payments_outlined, color: Color(0xFF001E42)),
                 SizedBox(width: 10),
                 Text(
-                  'Solicitar Compensacion',
+                  'Solicitar Compensación',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -162,7 +162,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Dias progresivos disponibles: $diasProgresivos\nSueldo base: \$${sueldoBase.toStringAsFixed(0)} CLP',
+                            'Días progresivos disponibles: $diasProgresivos\nSueldo base: \$${sueldoBase.toStringAsFixed(0)} CLP',
                             style: const TextStyle(
                               fontSize: 13,
                               color: Color(0xFF1D4ED8),
@@ -176,7 +176,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
 
                   // Campo dias
                   const Text(
-                    'Dias a compensar:',
+                    'Días a compensar:',
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                   const SizedBox(height: 6),
@@ -212,7 +212,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Calculo:',
+                            'Cálculo:',
                             style: TextStyle(
                               fontSize: 12,
                               color: Color(0xFF059669),
@@ -221,7 +221,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '(\$${sueldoBase.toStringAsFixed(0)} ÷ 30) × $diasIngresados dias',
+                            '(\$${sueldoBase.toStringAsFixed(0)} ÷ 30) × $diasIngresados días',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF065F46),
@@ -241,7 +241,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      'La solicitud queda pendiente de aprobacion del Administrador.',
+                      'La solicitud queda pendiente de aprobación del Administrador.',
                       style: TextStyle(
                         fontSize: 11,
                         color: Color(0xFF64748B),
@@ -307,7 +307,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Solicitud enviada correctamente. Pendiente de aprobacion.',
+              'Solicitud enviada correctamente. Pendiente de aprobación.',
             ),
             backgroundColor: Color(0xFF059669),
           ),
@@ -395,7 +395,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Art. 67 Codigo del Trabajo · Factor 1.25 por mes trabajado',
+                            'Art. 67 Código del Trabajo · Factor 1.25 por mes trabajado',
                             style: TextStyle(
                               fontSize: 13,
                               color: Color(0xFF64748B),
@@ -436,7 +436,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         const Text(
-                                          'Se agregaron tus 15 dias de vacaciones de este año',
+                                          'Se agregaron tus 15 días de vacaciones de este año',
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
@@ -445,7 +445,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          'Saldo anterior: ${_balance!['dias_acumulados_antes_incremento']} + 15 (nuevo periodo) = ${_balance!['dias_acumulados']} dias'
+                                          'Saldo anterior: ${_balance!['dias_acumulados_antes_incremento']} + 15 (nuevo periodo) = ${_balance!['dias_acumulados']} días'
                                           '${_balance!['fecha_ultimo_incremento'] != null ? ' · desde el ${_balance!['fecha_ultimo_incremento']}' : ''}',
                                           style: const TextStyle(
                                             color: Colors.white,
@@ -480,7 +480,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Saldo excedido: los dias utilizados superan los dias acumulados. Contacte a Recursos Humanos.',
+                                      'Saldo excedido: los días utilizados superan los días acumulados. Contacte a Recursos Humanos.',
                                       style: TextStyle(
                                         color: Colors.red[800],
                                         fontSize: 13,
@@ -496,7 +496,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                             children: [
                               Expanded(
                                 child: _TarjetaBalance(
-                                  titulo: 'Dias Acumulados',
+                                  titulo: 'Días Acumulados',
                                   valor: '${_balance!['dias_acumulados']}',
                                   subtitulo:
                                       '${_balance!['acumulado_4dec']} exacto',
@@ -509,7 +509,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _TarjetaBalance(
-                                  titulo: 'Dias Utilizados',
+                                  titulo: 'Días Utilizados',
                                   valor: '${_balance!['dias_utilizados']}',
                                   subtitulo: 'Vacaciones tomadas',
                                   color: const Color(0xFFD97706),
@@ -521,7 +521,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: _TarjetaBalance(
-                                  titulo: 'Dias Disponibles',
+                                  titulo: 'Días Disponibles',
                                   valor: '${_balance!['dias_disponibles']}',
                                   subtitulo: _balance!['saldo_excedido'] == true
                                       ? 'Saldo excedido'
@@ -582,7 +582,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                   children: [
                                     Expanded(
                                       child: _TarjetaBalance(
-                                        titulo: 'Dias Progresivos',
+                                        titulo: 'Días Progresivos',
                                         valor:
                                             '${_balance!['dias_progresivos'] ?? 0}',
                                         subtitulo:
@@ -603,7 +603,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                             (_balance!['cumple_progresivos'] ==
                                                     true)
                                                 ? 'Cumples los 120 meses de cotizaciones previas. Con ${_balance!['anos_clinica'] ?? 0} años en la clínica obtienes ${_balance!['dias_progresivos'] ?? 0} día(s) progresivo(s) (1 día cada 3 años).'
-                                                : 'Aun no cumples los 120 meses de cotizaciones previas requeridos. Te faltan ${_balance!['meses_faltantes'] ?? 0} meses.',
+                                                : 'Aún no cumples los 120 meses de cotizaciones previas requeridos. Te faltan ${_balance!['meses_faltantes'] ?? 0} meses.',
                                             style: TextStyle(
                                               fontSize: 13,
                                               color:
@@ -625,7 +625,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                                   size: 18,
                                                 ),
                                                 label: const Text(
-                                                  'Solicitar compensacion en efectivo',
+                                                  'Solicitar compensación en efectivo',
                                                 ),
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor: const Color(
@@ -680,7 +680,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                     ),
                                     SizedBox(width: 8),
                                     Text(
-                                      'Detalle del Calculo',
+                                      'Detalle del Cálculo',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -696,7 +696,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                 ),
                                 const SizedBox(height: 10),
                                 _FilaDetalle(
-                                  label: 'Meses en la clinica:',
+                                  label: 'Meses en la clínica:',
                                   valor: '${_balance!['meses_clinica']} meses',
                                 ),
                                 const SizedBox(height: 10),
@@ -771,26 +771,26 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                 const SizedBox(height: 10),
                                 _FilaDetalle(
                                   label:
-                                      'Calculo interno (solo meses en la clinica, 4 decimales):',
+                                      'Cálculo interno (solo meses en la clínica, 4 decimales):',
                                   valor:
                                       '${_balance!['meses_clinica']} × 1.25 = ${_balance!['acumulado_4dec']}',
                                 ),
                                 const SizedBox(height: 10),
                                 _FilaDetalle(
-                                  label: 'Dias acumulados (redondeado):',
-                                  valor: '${_balance!['dias_acumulados']} dias',
+                                  label: 'Días acumulados (redondeado):',
+                                  valor: '${_balance!['dias_acumulados']} días',
                                   destacado: true,
                                 ),
                                 const Divider(height: 20),
                                 _FilaDetalle(
-                                  label: 'Dias utilizados:',
-                                  valor: '${_balance!['dias_utilizados']} dias',
+                                  label: 'Días utilizados:',
+                                  valor: '${_balance!['dias_utilizados']} días',
                                 ),
                                 const SizedBox(height: 10),
                                 _FilaDetalle(
-                                  label: 'Dias disponibles:',
+                                  label: 'Días disponibles:',
                                   valor:
-                                      '${_balance!['dias_disponibles']} dias',
+                                      '${_balance!['dias_disponibles']} días',
                                   destacado: true,
                                   colorValor:
                                       _balance!['saldo_excedido'] == true
@@ -843,7 +843,7 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Ultima actualizacion: ${_balance!['ultima_actualizacion']}',
+                                    'Última actualización: ${_balance!['ultima_actualizacion']}',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF64748B),
@@ -918,7 +918,7 @@ class _TarjetaCompensacion extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${comp['dias_compensados']} dias · \$${comp['monto_clp']} CLP',
+                  '${comp['dias_compensados']} días · \$${comp['monto_clp']} CLP',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
