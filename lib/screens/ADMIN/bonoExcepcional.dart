@@ -377,25 +377,7 @@ class _BonoExcepcionalScreenState extends State<BonoExcepcionalScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              ChoiceChip(
-                                label: const Text('Imponible'),
-                                selected: _clasificacion == 'Imponible',
-                                onSelected: (_) => setState(
-                                  () => _clasificacion = 'Imponible',
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              ChoiceChip(
-                                label: const Text('No imponible'),
-                                selected: _clasificacion == 'No imponible',
-                                onSelected: (_) => setState(
-                                  () => _clasificacion = 'No imponible',
-                                ),
-                              ),
-                            ],
-                          ),
+                          const Chip(label: Text('Imponible')),
                           const SizedBox(height: 14),
 
                           const Text(

@@ -193,6 +193,7 @@ class _LiquidacionHonorarioScreenState
   }
 
   Future<void> _calcularHonorario() async {
+    // Empleado seleccionado-------------------------------------------------------------------------------------------------------
     if (_empleadoSeleccionado == null) {
       setState(() {
         _errorCalculo = 'Selecciona un trabajador primero';

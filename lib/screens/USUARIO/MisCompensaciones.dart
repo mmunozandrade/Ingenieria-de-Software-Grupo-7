@@ -202,7 +202,7 @@ class _MisCompensacionesState extends State<MisCompensaciones> {
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Historial de solicitudes de compensacion en efectivo por dias progresivos',
+                            'Historial de solicitudes de compensación en efectivo por días progresivos',
                             style: TextStyle(
                               fontSize: 13,
                               color: Color(0xFF64748B),

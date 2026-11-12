@@ -2217,7 +2217,7 @@ class SeccionMovilizacion extends StatefulWidget {
 }
 
 class _SeccionMovilizacionState extends State<SeccionMovilizacion> {
-  static const int _montoFijoMovilizacion = 50000;
+  static const int _montoFijoMovilizacion = 60000;
   static const int _montoFijoColacion = 60000;
   bool _enviando = false;
   String _mensaje = '';

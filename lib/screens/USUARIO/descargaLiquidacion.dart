@@ -69,21 +69,8 @@ class _DescargaLiquidacionState extends State<DescargaLiquidacion> {
           liqData['liquidaciones'] ?? [],
         );
 
-        // Ordenar cronológicamente de más nueva a más antigua
-        lista.sort((a, b) {
-          final periodoA = a['periodo'] ?? '';
-          final periodoB = b['periodo'] ?? '';
-          try {
-            final partsA = periodoA.split('/');
-            final partsB = periodoB.split('/');
-            final dateA = DateTime(int.parse(partsA[1]), int.parse(partsA[0]));
-            final dateB = DateTime(int.parse(partsB[1]), int.parse(partsB[0]));
-            return dateB.compareTo(dateA);
-          } catch (_) {
-            return periodoB.compareTo(periodoA);
-          }
-        });
-
+        // El servidor ya envía la lista ordenada de la más nueva a la
+        // más antigua (ORDER BY periodo DESC), así que se muestra tal cual.
         setState(() => _liquidaciones = lista);
       }
     } catch (e) {

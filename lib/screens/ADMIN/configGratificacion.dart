@@ -22,10 +22,10 @@ class ConfigGratificacionScreen extends StatefulWidget {
 class _ConfigGratificacionScreenState extends State<ConfigGratificacionScreen> {
   // ── Modalidad ──────────────────────────────────────────────
   bool _cargandoModalidad = true;
-  String _modalidad = 'Proporcional';
+  // Solo existe la modalidad proporcional mensual (Art. 50).
+  static const String _modalidad = 'Proporcional';
   final _porcentajeMensualCtrl = TextEditingController(text: '25');
   final _limiteImmAnualCtrl = TextEditingController(text: '4.75');
-  final _porcentajeAnualCtrl = TextEditingController(text: '30');
   String _fechaModificacionModalidad = '—';
   bool _guardandoModalidad = false;
   String _mensajeModalidad = '';
@@ -52,7 +52,6 @@ class _ConfigGratificacionScreenState extends State<ConfigGratificacionScreen> {
   void dispose() {
     _porcentajeMensualCtrl.dispose();
     _limiteImmAnualCtrl.dispose();
-    _porcentajeAnualCtrl.dispose();
     _immCtrl.dispose();
     super.dispose();
   }
@@ -71,12 +70,9 @@ class _ConfigGratificacionScreenState extends State<ConfigGratificacionScreen> {
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
         setState(() {
-          _modalidad = data['modalidad'] ?? 'Proporcional';
           _porcentajeMensualCtrl.text = (data['porcentaje_mensual'] ?? 25.0)
               .toString();
           _limiteImmAnualCtrl.text = (data['limite_imm_anual'] ?? 4.75)
-              .toString();
-          _porcentajeAnualCtrl.text = (data['porcentaje_anual'] ?? 30.0)
               .toString();
           _fechaModificacionModalidad = data['fecha_modificacion'] ?? '—';
         });
@@ -93,10 +89,7 @@ class _ConfigGratificacionScreenState extends State<ConfigGratificacionScreen> {
       _porcentajeMensualCtrl.text.trim(),
     );
     final limiteImmAnual = double.tryParse(_limiteImmAnualCtrl.text.trim());
-    final porcentajeAnual = double.tryParse(_porcentajeAnualCtrl.text.trim());
-    if (porcentajeMensual == null ||
-        limiteImmAnual == null ||
-        porcentajeAnual == null) {
+    if (porcentajeMensual == null || limiteImmAnual == null) {
       setState(() {
         _exitoModalidad = false;
         _mensajeModalidad = 'Revisa que los porcentajes sean números válidos';
@@ -119,7 +112,6 @@ class _ConfigGratificacionScreenState extends State<ConfigGratificacionScreen> {
           'modalidad': _modalidad,
           'porcentaje_mensual': porcentajeMensual,
           'limite_imm_anual': limiteImmAnual,
-          'porcentaje_anual': porcentajeAnual,
         }),
       );
       final data = jsonDecode(response.body);
@@ -297,33 +289,6 @@ class _ConfigGratificacionScreenState extends State<ConfigGratificacionScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 14),
-                                DropdownButtonFormField<String>(
-                                  value: _modalidad,
-                                  decoration: InputDecoration(
-                                    labelText: 'Modalidad',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  items: const [
-                                    DropdownMenuItem(
-                                      value: 'Proporcional',
-                                      child: Text(
-                                        'Proporcional (25% mensual, tope IMM)',
-                                      ),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'Anual',
-                                      child: Text(
-                                        'Anual (30% utilidad líquida)',
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (v) => setState(
-                                    () => _modalidad = v ?? _modalidad,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
                                 if (_modalidad == 'Proporcional') ...[
                                   Row(
                                     children: [
@@ -364,23 +329,6 @@ class _ConfigGratificacionScreenState extends State<ConfigGratificacionScreen> {
                                         ),
                                       ),
                                     ],
-                                  ),
-                                ] else ...[
-                                  TextField(
-                                    controller: _porcentajeAnualCtrl,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                          decimal: true,
-                                        ),
-                                    decoration: InputDecoration(
-                                      labelText:
-                                          '% anual sobre utilidad líquida',
-                                      suffixText: '%',
-                                      isDense: true,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
                                   ),
                                 ],
                                 const SizedBox(height: 14),

@@ -419,7 +419,7 @@ class _TarjetaReferencia extends StatelessWidget {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        '\$50.000',
+                        '\$60.000',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,

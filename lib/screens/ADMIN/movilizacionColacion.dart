@@ -15,7 +15,7 @@ class MovilizacionColacionScreen extends StatefulWidget {
 
 class _MovilizacionColacionScreenState
     extends State<MovilizacionColacionScreen> {
-  static const int _montoFijoMovilizacion = 50000;
+  static const int _montoFijoMovilizacion = 60000;
   static const int _montoFijoColacion = 60000;
 
   // Confirmacion mensual (aplica a TODOS los trabajadores de una vez)

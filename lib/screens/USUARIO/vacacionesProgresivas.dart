@@ -93,7 +93,7 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
     setState(() {
       _guardando = false;
       _exito = true;
-      _mensaje = 'Saldo actualizado: $_diasProgresivos dia(s) progresivo(s).';
+      _mensaje = 'Saldo actualizado: $_diasProgresivos día(s) progresivo(s).';
     });
   }
 
@@ -145,7 +145,7 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
                       Image.asset('assets/Logo.png', height: 80),
                       const SizedBox(height: 20),
                       const Text(
-                        'Calculo de Vacaciones Progresivas',
+                        'Cálculo de Vacaciones Progresivas',
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -155,7 +155,7 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Art. 68 Codigo del Trabajo - Sistema de Personal Institucional',
+                        'Art. 68 Código del Trabajo - Sistema de Personal Institucional',
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF64748B),
@@ -177,7 +177,7 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Detalle del Calculo',
+                              'Detalle del Cálculo',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -193,12 +193,12 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
                             const SizedBox(height: 14),
 
                             _filaDato(
-                              titulo: 'Meses trabajados en la clinica:',
+                              titulo: 'Meses trabajados en la clínica:',
                               valor:
-                                  '$_mesesClinica meses (${_mesesClinica ~/ 12} anos)',
+                                  '$_mesesClinica meses (${_mesesClinica ~/ 12} años)',
                               nota: cumpleClinica
-                                  ? 'Cumple minimo 3 anos de antiguedad (Art. 68)'
-                                  : 'Requiere al menos 36 meses en la clinica (faltan ${36 - _mesesClinica} meses)',
+                                  ? 'Cumple mínimo 3 años de antigüedad (Art. 68)'
+                                  : 'Requiere al menos 36 meses en la clínica (faltan ${36 - _mesesClinica} meses)',
                               notaPositiva: cumpleClinica,
                             ),
                             const SizedBox(height: 14),
@@ -206,10 +206,10 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
                             const SizedBox(height: 14),
 
                             _filaDato(
-                              titulo: 'Total de meses de cotizacion:',
+                              titulo: 'Total de meses de cotización:',
                               valor: '$_totalMeses meses',
                               nota: cumpleTotal
-                                  ? 'Cumple 120 meses minimos requeridos (Art. 68)'
+                                  ? 'Cumple 120 meses mínimos requeridos (Art. 68)'
                                   : 'Requiere 120 meses en total (faltan ${_mesesFaltantes} meses)',
                               notaPositiva: cumpleTotal,
                             ),
@@ -217,7 +217,7 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
                             if (_fechaIngreso != '—') ...[
                               const SizedBox(height: 14),
                               _filaDato(
-                                titulo: 'Fecha de ingreso a la clinica:',
+                                titulo: 'Fecha de ingreso a la clínica:',
                                 valor: _fechaIngreso,
                               ),
                             ],
@@ -261,7 +261,7 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      'Dias Progresivos Calculados',
+                                      'Días Progresivos Calculados',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
@@ -455,19 +455,19 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
       children: [
         _validacion(
           cumpleTotal,
-          'Total supera 120 meses de cotizacion Art. 68',
+          'Total supera 120 meses de cotización Art. 68',
         ),
         const SizedBox(height: 10),
-        _validacion(cumpleClinica, 'Minimo 3 anos de antiguedad en la clinica'),
+        _validacion(cumpleClinica, 'Mínimo 3 años de antigüedad en la clínica'),
         const SizedBox(height: 10),
         _validacion(
           _cumpleProgresivos,
-          'Inicio beneficio: $_fechaInicioBeneficio · $_anosDesdeInicio anos completos',
+          'Inicio beneficio: $_fechaInicioBeneficio · $_anosDesdeInicio años completos',
         ),
         const SizedBox(height: 10),
         _validacion(
           true,
-          '1 dia adicional por cada 3 anos desde fecha de inicio beneficio',
+          '1 día adicional por cada 3 años desde la fecha de inicio del beneficio',
         ),
       ],
     );
@@ -477,7 +477,7 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
     return Column(
       children: [
         Text(
-          'Total dias progresivos disponibles:',
+          'Total días progresivos disponibles:',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 13,
@@ -488,7 +488,7 @@ class _VacacionesProgresivasState extends State<VacacionesProgresivas> {
         ),
         const SizedBox(height: 10),
         Text(
-          '$_diasProgresivos dia${_diasProgresivos == 1 ? '' : 's'}',
+          '$_diasProgresivos día${_diasProgresivos == 1 ? '' : 's'}',
           style: TextStyle(
             fontSize: 44,
             fontWeight: FontWeight.w300,

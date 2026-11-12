@@ -18,7 +18,7 @@ const List<String> _afpListPend = [
 ];
 const List<String> _tiposContratoPend = [
   'Indefinido',
-  'Plazo fijo',
+  'Plazo Fijo',
   'Por obra',
   'Honorario',
 ];
@@ -58,9 +58,11 @@ class _CuentasPendientesState extends State<CuentasPendientes> {
       );
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
+        final requiereCodigo = data['requiere_codigo'] == true;
         setState(
-          () =>
-              _cuentas = List<Map<String, dynamic>>.from(data['cuentas'] ?? []),
+          () => _cuentas = List<Map<String, dynamic>>.from(
+            data['cuentas'] ?? [],
+          ).map((c) => {...c, 'requiere_codigo': requiereCodigo}).toList(),
         );
       } else {
         setState(() => _error = data['mensaje'] ?? 'Error al cargar');
@@ -139,7 +141,9 @@ class _CuentasPendientesState extends State<CuentasPendientes> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Estas cuentas fueron creadas por los trabajadores pero aun no tienen datos personales completos. Completa su informacion para que puedan usar el sistema.',
+                              _cuentas.any((c) => c['requiere_codigo'] == true)
+                                  ? 'Solicitudes de cuenta enviadas por los trabajadores. Pide al trabajador su código de 6 dígitos, ingrésalo junto a sus datos y crea la cuenta; si no reconoces la solicitud, elimínala. Las solicitudes vencen a los 3 días.'
+                                  : 'Estas cuentas fueron creadas por los trabajadores pero aún no tienen datos personales completos. Completa su información para que puedan usar el sistema.',
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: Color(0xFF92400E),
@@ -172,7 +176,7 @@ class _CuentasPendientesState extends State<CuentasPendientes> {
                                   ),
                                   SizedBox(height: 4),
                                   Text(
-                                    'Todas las cuentas tienen datos completos',
+                                    'No hay solicitudes de cuenta por revisar',
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Color(0xFF94A3B8),
@@ -252,7 +256,9 @@ class _CuentasPendientesState extends State<CuentasPendientes> {
                                                         ),
                                                   ),
                                                   child: Text(
-                                                    'Sin datos personales',
+                                                    c['requiere_codigo'] == true
+                                                        ? 'Solicitud pendiente'
+                                                        : 'Sin datos personales',
                                                     style: const TextStyle(
                                                       fontSize: 11,
                                                       color: Color(0xFF92400E),
@@ -263,7 +269,9 @@ class _CuentasPendientesState extends State<CuentasPendientes> {
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
-                                                  'Rol: ${c['rol'] ?? '—'}',
+                                                  c['requiere_codigo'] == true
+                                                      ? 'Enviada: ${c['fecha_solicitud'] ?? '—'}'
+                                                      : 'Rol: ${c['rol'] ?? '—'}',
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     color: Color(0xFF64748B),
@@ -282,7 +290,11 @@ class _CuentasPendientesState extends State<CuentasPendientes> {
                                           Icons.edit_outlined,
                                           size: 16,
                                         ),
-                                        label: const Text('Completar'),
+                                        label: Text(
+                                          c['requiere_codigo'] == true
+                                              ? 'Revisar'
+                                              : 'Completar',
+                                        ),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: const Color(
                                             0xFF001E42,
@@ -340,6 +352,9 @@ class _FormularioCompletarCuentaState
   final _cargoCtrl = TextEditingController();
   final _sueldoCtrl = TextEditingController();
   final _discapacidadCtrl = TextEditingController();
+  final _codigoCtrl = TextEditingController();
+
+  bool get _requiereCodigo => widget.cuenta['requiere_codigo'] == true;
 
   String? _salud;
   String? _afp;
@@ -363,6 +378,7 @@ class _FormularioCompletarCuentaState
     _cargoCtrl.dispose();
     _sueldoCtrl.dispose();
     _discapacidadCtrl.dispose();
+    _codigoCtrl.dispose();
     super.dispose();
   }
 
@@ -403,8 +419,82 @@ class _FormularioCompletarCuentaState
   String _fmtFecha(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 
+  Future<void> _eliminarSolicitud() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar solicitud'),
+        content: Text(
+          '¿Eliminar la solicitud de ${widget.cuenta['correo']}? '
+          'Usa esta opción si nadie te avisó de esta solicitud. '
+          'El correo quedará libre para registrarse nuevamente y la acción '
+          'quedará en el registro de auditoría.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+
+    setState(() {
+      _guardando = true;
+      _mensaje = '';
+    });
+    try {
+      final token = await SessionService.obtenerToken();
+      final response = await http.post(
+        Uri.parse('$_apiUrlPend/admin/rechazar-cuenta'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'cuenta_id': widget.cuenta['cuenta_id']}),
+      );
+      final data = jsonDecode(response.body);
+      final ok = data['success'] == true;
+      setState(() {
+        _exito = ok;
+        _mensaje = ok
+            ? 'Solicitud eliminada correctamente'
+            : (data['mensaje'] ?? 'Error');
+      });
+      if (ok) {
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) Navigator.pop(context);
+      }
+    } catch (_) {
+      setState(() {
+        _exito = false;
+        _mensaje = 'No se pudo conectar al servidor';
+      });
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
+
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_requiereCodigo &&
+        !RegExp(r'^\d{6}$').hasMatch(_codigoCtrl.text.trim())) {
+      setState(() {
+        _exito = false;
+        _mensaje =
+            'Ingresa el código de 6 dígitos que te entregó el trabajador';
+      });
+      return;
+    }
     if (_fechaIngreso == null) {
       setState(() {
         _exito = false;
@@ -415,7 +505,7 @@ class _FormularioCompletarCuentaState
     if (_salud == null && _tipoContrato != 'Honorario') {
       setState(() {
         _exito = false;
-        _mensaje = 'Debes seleccionar la institucion de salud';
+        _mensaje = 'Debes seleccionar la institución de salud';
       });
       return;
     }
@@ -449,7 +539,8 @@ class _FormularioCompletarCuentaState
       final token = await SessionService.obtenerToken();
       final body = {
         'cuenta_id': widget.cuenta['cuenta_id'],
-        'rut': _rutCtrl.text.trim(),
+        if (_requiereCodigo) 'codigo': _codigoCtrl.text.trim(),
+        'rut': _rutCtrl.text.trim().toUpperCase(),
         'primer_nombre': _primerNombreCtrl.text.trim(),
         'segundo_nombre': _segundoNombreCtrl.text.trim(),
         'apellido_paterno': _apPaternoCtrl.text.trim(),
@@ -481,7 +572,9 @@ class _FormularioCompletarCuentaState
       setState(() {
         _exito = data['success'] == true;
         _mensaje = _exito
-            ? 'Datos completados correctamente'
+            ? (_requiereCodigo
+                  ? 'Cuenta creada y habilitada correctamente'
+                  : 'Datos completados correctamente')
             : data['mensaje'] ?? 'Error';
       });
 
@@ -495,7 +588,7 @@ class _FormularioCompletarCuentaState
         _mensaje = 'No se pudo conectar al servidor';
       });
     } finally {
-      setState(() => _guardando = false);
+      if (mounted) setState(() => _guardando = false);
     }
   }
 
@@ -558,10 +651,74 @@ class _FormularioCompletarCuentaState
                     ),
                   ),
 
+                  if (_requiereCodigo) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFDE68A)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Solicitud enviada el ${widget.cuenta['fecha_solicitud'] ?? '—'}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Código de la solicitud',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Pídeselo al trabajador en persona o por teléfono. '
+                            'Solo ingresa el código si el trabajador confirmó '
+                            'que envió esta solicitud.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _Campo(
+                            label: 'Código de 6 dígitos *',
+                            hint: 'Ej: 123456',
+                            controller: _codigoCtrl,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(6),
+                            ],
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'El código es obligatorio';
+                              }
+                              if (!RegExp(r'^\d{6}$').hasMatch(v.trim())) {
+                                return 'Debe tener exactamente 6 dígitos';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
                   // ── SECCION 1: IDENTIFICACION ───────────
                   _SecTitulo(
                     numero: '1',
-                    titulo: 'Identificacion',
+                    titulo: 'Identificación',
                     icono: Icons.badge_outlined,
                   ),
                   const SizedBox(height: 16),
@@ -570,15 +727,16 @@ class _FormularioCompletarCuentaState
                     label: 'RUT *',
                     hint: 'Ej: 18.679.609-8',
                     controller: _rutCtrl,
+                    inputFormatters: [_RutMayusculaFormatter()],
                     validator: (v) {
                       if (v == null || v.isEmpty)
                         return 'El RUT es obligatorio';
                       if (!RegExp(
                         r'^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$',
                       ).hasMatch(v))
-                        return 'Formato invalido. Use xx.xxx.xxx-x';
+                        return 'Formato inválido. Use xx.xxx.xxx-x';
                       if (!_validarRut(v))
-                        return 'El digito verificador no es valido';
+                        return 'El dígito verificador no es válido';
                       return null;
                     },
                   ),
@@ -589,7 +747,7 @@ class _FormularioCompletarCuentaState
                       Expanded(
                         child: _Campo(
                           label: 'Primer nombre *',
-                          hint: 'Ej: Matias',
+                          hint: 'Ej: Matías',
                           controller: _primerNombreCtrl,
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Obligatorio';
@@ -620,7 +778,7 @@ class _FormularioCompletarCuentaState
                       Expanded(
                         child: _Campo(
                           label: 'Apellido paterno *',
-                          hint: 'Ej: Gonzalez',
+                          hint: 'Ej: González',
                           controller: _apPaternoCtrl,
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Obligatorio';
@@ -634,7 +792,7 @@ class _FormularioCompletarCuentaState
                       Expanded(
                         child: _Campo(
                           label: 'Apellido materno *',
-                          hint: 'Ej: Perez',
+                          hint: 'Ej: Pérez',
                           controller: _apMaternoCtrl,
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Obligatorio';
@@ -657,20 +815,20 @@ class _FormularioCompletarCuentaState
                   const SizedBox(height: 16),
 
                   _Campo(
-                    label: 'Telefono',
+                    label: 'Teléfono',
                     hint: '+56 9 8765 4321',
                     controller: _telefonoCtrl,
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 12),
                   _Campo(
-                    label: 'Direccion',
+                    label: 'Dirección',
                     hint: 'Av. Los Andes 1234',
                     controller: _direccionCtrl,
                     maxLines: 2,
                     validator: (v) {
                       if (v != null && v.isNotEmpty && v.length < 10)
-                        return 'Minimo 10 caracteres';
+                        return 'Mínimo 10 caracteres';
                       return null;
                     },
                   ),
@@ -679,7 +837,7 @@ class _FormularioCompletarCuentaState
                   // ── SECCION 3: PREVISION ────────────────
                   _SecTitulo(
                     numero: '3',
-                    titulo: 'Prevision',
+                    titulo: 'Previsión',
                     icono: Icons.health_and_safety_outlined,
                   ),
                   const SizedBox(height: 16),
@@ -707,12 +865,12 @@ class _FormularioCompletarCuentaState
                                 ),
                               )
                             : _DropDown(
-                                label: 'Institucion de salud *',
+                                label: 'Institución de salud *',
                                 value: _salud,
                                 items: _institucionesPend,
                                 onChanged: (v) => setState(() => _salud = v),
                                 validator: (v) =>
-                                    v == null ? 'Selecciona una opcion' : null,
+                                    v == null ? 'Selecciona una opción' : null,
                               ),
                       ),
                       const SizedBox(width: 12),
@@ -742,7 +900,7 @@ class _FormularioCompletarCuentaState
                                 items: _afpListPend,
                                 onChanged: (v) => setState(() => _afp = v),
                                 validator: (v) =>
-                                    v == null ? 'Selecciona una opcion' : null,
+                                    v == null ? 'Selecciona una opción' : null,
                               ),
                       ),
                     ],
@@ -752,7 +910,7 @@ class _FormularioCompletarCuentaState
                   // ── SECCION 4: CONTRACTUAL ──────────────
                   _SecTitulo(
                     numero: '4',
-                    titulo: 'Informacion Contractual',
+                    titulo: 'Información Contractual',
                     icono: Icons.work_outline,
                   ),
                   const SizedBox(height: 16),
@@ -792,7 +950,7 @@ class _FormularioCompletarCuentaState
                   else
                     _Campo(
                       label: 'Cargo *',
-                      hint: 'Ej: Tecnico en Informática',
+                      hint: 'Ej: Técnico en Informática',
                       controller: _cargoCtrl,
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obligatorio';
@@ -812,7 +970,7 @@ class _FormularioCompletarCuentaState
                       if (v == 'Honorario') _sueldoCtrl.clear();
                     }),
                     validator: (v) =>
-                        v == null ? 'Selecciona una opcion' : null,
+                        v == null ? 'Selecciona una opción' : null,
                   ),
                   const SizedBox(height: 12),
 
@@ -883,9 +1041,9 @@ class _FormularioCompletarCuentaState
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Obligatorio';
                         final n = int.tryParse(v);
-                        if (n == null) return 'Debe ser un numero entero';
+                        if (n == null) return 'Debe ser un número entero';
                         if (n < _salarioMinimoPend)
-                          return 'No puede ser inferior al salario minimo (\$$_salarioMinimoPend)';
+                          return 'No puede ser inferior al salario mínimo (\$$_salarioMinimoPend)';
                         return null;
                       },
                     ),
@@ -894,7 +1052,7 @@ class _FormularioCompletarCuentaState
                   // ── SECCION 5: OPCIONALES ───────────────
                   _SecTitulo(
                     numero: '5',
-                    titulo: 'Informacion Opcional',
+                    titulo: 'Información Opcional',
                     icono: Icons.info_outline,
                   ),
                   const SizedBox(height: 16),
@@ -930,7 +1088,7 @@ class _FormularioCompletarCuentaState
                   if (_fechaNacimiento != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Edad: ${_calcularEdad()} anos',
+                      'Edad: ${_calcularEdad()} años',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF0D9488),
@@ -940,7 +1098,7 @@ class _FormularioCompletarCuentaState
                   const SizedBox(height: 12),
 
                   _Campo(
-                    label: 'Informacion discapacidad (Ley 20.422)',
+                    label: 'Información discapacidad (Ley 20.422)',
                     hint: 'Opcional',
                     controller: _discapacidadCtrl,
                     maxLines: 2,
@@ -1002,7 +1160,11 @@ class _FormularioCompletarCuentaState
                             )
                           : const Icon(Icons.person_add_outlined),
                       label: Text(
-                        _guardando ? 'Guardando...' : 'Completar Datos',
+                        _guardando
+                            ? 'Guardando...'
+                            : (_requiereCodigo
+                                  ? 'Crear cuenta'
+                                  : 'Completar Datos'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -1018,6 +1180,31 @@ class _FormularioCompletarCuentaState
                       ),
                     ),
                   ),
+                  if (_requiereCodigo) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: _guardando ? null : _eliminarSolicitud,
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text(
+                          'Eliminar solicitud',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFDC2626),
+                          side: const BorderSide(color: Color(0xFFFCA5A5)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 40),
                 ],
               ),
@@ -1077,6 +1264,17 @@ class _SecTitulo extends StatelessWidget {
         const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
       ],
     );
+  }
+}
+
+// Pasa a mayúscula lo que se escribe en el RUT (así la "k" queda "K").
+class _RutMayusculaFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return newValue.copyWith(text: newValue.text.toUpperCase());
   }
 }
 

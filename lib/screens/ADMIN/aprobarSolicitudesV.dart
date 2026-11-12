@@ -94,7 +94,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'La observacion es obligatoria al rechazar (minimo 10 caracteres)',
+              'La observación es obligatoria al rechazar (mínimo 10 caracteres)',
             ),
             backgroundColor: Colors.red,
           ),
@@ -104,7 +104,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
       if (observacion.length > 500) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('La observacion no puede superar 500 caracteres'),
+            content: Text('La observación no puede superar 500 caracteres'),
             backgroundColor: Colors.red,
           ),
         );
@@ -172,7 +172,10 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      if (response.statusCode == 200) {
+      final esPdf = (response.headers['content-type'] ?? '').contains(
+        'application/pdf',
+      );
+      if (response.statusCode == 200 && esPdf) {
         final blob = html.Blob([response.bodyBytes], 'application/pdf');
         final url = html.Url.createObjectUrlFromBlob(blob);
         final anchor = html.AnchorElement(href: url)
@@ -188,8 +191,29 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
             ),
           );
         }
+      } else {
+        // El servidor respondio con un error (JSON) en vez del PDF
+        String mensaje = 'No se pudo generar el recibo';
+        try {
+          final data = jsonDecode(response.body);
+          mensaje = data['mensaje'] ?? mensaje;
+        } catch (_) {}
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
+          );
+        }
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo conectar al servidor'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Color _colorEstado(String estado) {
@@ -222,7 +246,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
         backgroundColor: const Color(0xFF001E42),
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
-          'Aprobacion y Rechazo de Solicitudes',
+          'Aprobación y Rechazo de Solicitudes',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -241,7 +265,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 Text(
-                  'Gestion de Solicitudes',
+                  'Gestión de Solicitudes',
                   style: TextStyle(color: Colors.white54, fontSize: 11),
                 ),
               ],
@@ -326,7 +350,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
                           Row(
                             children: [
                               const Text(
-                                'Filtrar por ano:',
+                                'Filtrar por año:',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Color(0xFF475569),
@@ -413,7 +437,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
                               child: Padding(
                                 padding: EdgeInsets.symmetric(vertical: 40),
                                 child: Text(
-                                  'No hay solicitudes en esta categoria.',
+                                  'No hay solicitudes en esta categoría.',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Color(0xFF64748B),
@@ -579,7 +603,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
                                                     CrossAxisAlignment.end,
                                                 children: [
                                                   const Text(
-                                                    'Fecha solicitud:',
+                                                    'Fecha de solicitud:',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                       color: Color(0xFF64748B),
@@ -622,32 +646,33 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
                                                       '${s['fecha_inicio']} - ${s['fecha_fin']}',
                                                 ),
                                                 _Dato(
-                                                  titulo: 'Dias habiles:',
+                                                  titulo: 'Días hábiles:',
                                                   valor:
-                                                      '${s['dias_habiles']} dias',
+                                                      '${s['dias_habiles']} días',
                                                 ),
                                                 _Dato(
                                                   titulo:
                                                       'Saldo actual (${(s['tipo_dias'] == 'progresivo') ? 'progresivo' : 'normal'}):',
                                                   valor:
-                                                      '${s['saldo_actual']} dias',
+                                                      '${s['saldo_actual']} días',
                                                 ),
                                                 _Dato(
-                                                  titulo: 'Saldo despues:',
+                                                  titulo: 'Saldo después:',
                                                   valor:
-                                                      '${s['saldo_despues']} dias',
+                                                      '${s['saldo_despues']} días',
                                                 ),
                                                 if (s['observacion'] != null &&
                                                     s['observacion']
                                                         .toString()
                                                         .isNotEmpty)
                                                   _Dato(
-                                                    titulo: 'Observacion:',
+                                                    titulo: 'Observación:',
                                                     valor: s['observacion'],
                                                   ),
                                                 if (s['fecha_decision'] != null)
                                                   _Dato(
-                                                    titulo: 'Fecha decision:',
+                                                    titulo:
+                                                        'Fecha de decisión:',
                                                     valor: s['fecha_decision'],
                                                   ),
                                               ],
@@ -658,7 +683,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
                                           if (expandida && pendiente) ...[
                                             const SizedBox(height: 16),
                                             const Text(
-                                              'Observacion (opcional para aprobar, obligatoria para rechazar - minimo 10 caracteres):',
+                                              'Observación (opcional para aprobar, obligatoria para rechazar - mínimo 10 caracteres):',
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 color: Color(0xFF0F172A),
@@ -672,7 +697,7 @@ class _AprobarSolicitudesVState extends State<AprobarSolicitudesV> {
                                               maxLength: 500,
                                               decoration: InputDecoration(
                                                 hintText:
-                                                    'Ingrese observacion...',
+                                                    'Ingrese observación...',
                                                 filled: true,
                                                 fillColor: const Color(
                                                   0xFFF8FAFC,

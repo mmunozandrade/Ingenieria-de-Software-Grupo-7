@@ -42,19 +42,25 @@ class _BalanceVacacionesState extends State<BalanceVacaciones> {
       final token = await SessionService.obtenerToken();
       final headers = {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization':
+            'Bearer $token', /////////////////////////////////////Aqui se adjunta el token /////////////////////////////////////////////////////////////////////////////////////
       };
 
-      // Cargar balance y compensaciones en paralelo
+      // Cargar balance y compensaciones en paralelo - muestra el resultado en la pantalla
       final responses = await Future.wait([
-        http.get(Uri.parse('$_apiUrl/mi-balance-vacaciones'), headers: headers),
+        http.get(
+          Uri.parse('$_apiUrl/mi-balance-vacaciones'),
+          headers: headers,
+        ), //////////////////////////////////////////////
         http.get(
           Uri.parse('$_apiUrl/mis-compensaciones-progresivas'),
           headers: headers,
         ),
       ]);
 
-      final dataBalance = jsonDecode(responses[0].body);
+      final dataBalance = jsonDecode(
+        responses[0].body,
+      ); /////////////LA PANTALLA RECIBE LOS DATOS DEL RETURN - BACKEND - ENDPOINT//////////////////////////////
       final dataComp = jsonDecode(responses[1].body);
 
       if (dataBalance['success'] == true) {

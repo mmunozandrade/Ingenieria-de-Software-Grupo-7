@@ -161,7 +161,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
         setState(() => _dias = data['dias'] ?? []);
       } else {
         setState(
-          () => _errorDias = data['mensaje'] ?? 'Error al cargar los dias',
+          () => _errorDias = data['mensaje'] ?? 'Error al cargar los días',
         );
       }
     } catch (_) {
@@ -186,7 +186,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
     if (_estadoFormulario == null) {
       setState(() {
         _exitoGuardar = false;
-        _mensajeGuardar = 'Selecciona el estado del dia';
+        _mensajeGuardar = 'Selecciona el estado del día';
       });
       return;
     }
@@ -244,7 +244,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
       setState(() {
         _exitoGuardar = data['success'] == true;
         _mensajeGuardar = _exitoGuardar
-            ? 'Dia registrado correctamente'
+            ? 'Día registrado correctamente'
             : data['mensaje'] ?? 'Error al guardar';
         if (_exitoGuardar) {
           _fechaFormulario = null;
@@ -355,7 +355,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Por apellido (minimo 3 letras) o RUT exacto.',
+            'Por apellido (mínimo 3 letras) o RUT exacto.',
             style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
           ),
           const SizedBox(height: 14),
@@ -538,7 +538,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
           Expanded(
             child: DropdownButtonFormField<int>(
               value: _anioSeleccionado,
-              decoration: const InputDecoration(labelText: 'Ano'),
+              decoration: const InputDecoration(labelText: 'Año'),
               items: anios
                   .map((a) => DropdownMenuItem(value: a, child: Text('$a')))
                   .toList(),
@@ -566,7 +566,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Dias registrados en $_periodoActual',
+            'Días registrados en $_periodoActual',
             style: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
@@ -588,7 +588,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
             )
           else if (_dias.isEmpty)
             const Text(
-              'Aun no hay dias registrados en este periodo.',
+              'Aún no hay días registrados en este periodo.',
               style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
             )
           else
@@ -617,7 +617,10 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
                     ),
                     Expanded(
                       child: Text(
-                        d['estado_dia'] ?? '',
+                        (d['estado_dia'] == 'Licencia medica'
+                                ? 'Licencia médica'
+                                : d['estado_dia']) ??
+                            '',
                         style: const TextStyle(fontSize: 13),
                       ),
                     ),
@@ -651,7 +654,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Registrar / editar un dia',
+            'Registrar / editar un día',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
@@ -711,9 +714,14 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             value: _estadoFormulario,
-            decoration: const InputDecoration(labelText: 'Estado del dia'),
+            decoration: const InputDecoration(labelText: 'Estado del día'),
             items: _estadosAsistencia
-                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .map(
+                  (e) => DropdownMenuItem(
+                    value: e,
+                    child: Text(e == 'Licencia medica' ? 'Licencia médica' : e),
+                  ),
+                )
                 .toList(),
             onChanged: (v) => setState(() => _estadoFormulario = v),
           ),
@@ -782,7 +790,7 @@ class _RegistroAsistenciaScreenState extends State<RegistroAsistenciaScreen> {
                       ),
                     )
                   : const Icon(Icons.save_outlined),
-              label: Text(_guardando ? 'Guardando...' : 'Guardar Dia'),
+              label: Text(_guardando ? 'Guardando...' : 'Guardar Día'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF16A34A),
                 foregroundColor: Colors.white,

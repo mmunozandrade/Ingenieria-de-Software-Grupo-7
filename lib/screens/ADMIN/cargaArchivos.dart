@@ -34,16 +34,22 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
   bool? _exito;
   String _mensaje = '';
 
-  // ── Seleccionar archivo ZIP ───────────────────────────────
+  // ── Seleccionar archivo ZIP ─────────────────────────────── // ── Seleccionar archivo ZIP ───────────────────────────────// ── Seleccionar archivo ZIP ───────────────────────────────
   Future<void> _seleccionarArchivoZip() async {
     final resultado = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['zip', 'pdf', 'docx', 'xlsx'],
-      withData: true,
-    );
+      allowedExtensions: [
+        'zip',
+        'pdf',
+        'docx',
+        'xlsx',
+      ], //Filepicker abre la ventana para escoger un archivo
+      withData: true, //alowExten limita que tipos aparecen como seleccionables
+    ); // hace que el contenido del archivo quede cargado en la memoria de la pantalla para enviarse
     if (resultado == null) return;
 
     final archivo = resultado.files.single;
+    // Validar que el archivo sea .zip
 
     // Validar que el archivo sea .zip
     if (!archivo.name.toLowerCase().endsWith('.zip')) {
@@ -55,6 +61,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                 Icon(Icons.error_outline, color: Colors.white),
                 SizedBox(width: 10),
                 Expanded(
+                  // se toma el archivo elegido y se mira su nombre, si no termina en .zip error
                   child: Text(
                     'Formato incorrecto. Solo se permiten archivos .zip',
                   ),
@@ -68,10 +75,11 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
       }
       return;
     }
-
+    // Si el archivo es zip, entonces se guarda y se avisa
     setState(() {
-      _nombreArchivo = archivo.name;
-      _archivoBytes = archivo.bytes;
+      _nombreArchivo = archivo.name; //guarda el nombre
+      _archivoBytes = archivo
+          .bytes; // y archivo bytes guarda el contenido, en la memoria de la pantalla
       _procesados = null;
       _errores = null;
       _detalleProcessados = [];
@@ -96,7 +104,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
     }
   }
 
-  // ── Subir ZIP al backend ──────────────────────────────────
+  // ── Subir ZIP al backend ──────────────────────────────────BACKEND------------------------------------------------------------
   Future<void> _subirArchivo() async {
     if (_nombreArchivo == null || _archivoBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -109,6 +117,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
     }
 
     setState(() {
+      // se marca subiendo = true y se borran los resultados anteriores
       _subiendo = true;
       _procesados = null;
       _errores = null;
@@ -117,26 +126,35 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
     });
 
     try {
-      final token = await SessionService.obtenerToken();
+      final token =
+          await SessionService.obtenerToken(); //obtener token de session service
 
       final request = http.MultipartRequest(
-        'POST',
+        //Aqui se arma la peticion de tipo POST porque se esta enviando algo para guardar
+        'POST', // multipart es el formato para enviar archivos
         Uri.parse('$_apiUrl/subir-liquidaciones'),
       );
-      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Authorization'] =
+          'Bearer $token'; // token en el encabezado
       request.files.add(
+        // request.files.add pone el archivo dentro de un paquete para enviarlo
         http.MultipartFile.fromBytes(
-          'archivo',
-          _archivoBytes!,
-          filename: _nombreArchivo!,
+          //prepara la pieza del archivo
+          'archivo', // este nombre "archivo" o etiqueta es lo q el servidor va a estar esperando exactamente con este nombre
+          _archivoBytes!, //contenido
+          filename: _nombreArchivo!, //nombre real del zip
         ),
       );
 
-      final streamed = await request.send();
+      final streamed = await request
+          .send(); // AQUI LA PETICION SALE HACIA EL SERVIDOR //////////////////////////////////////////////
       final response = await http.Response.fromStream(streamed);
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(
+        response.body,
+      ); //En esta recibe el texto backend y lo convierte en json
 
       setState(() {
+        //En esta parte recibe la respuesta del backend
         _exito = data['success'] == true;
         _mensaje = data['mensaje'] ?? '';
         _procesados = data['procesados'] ?? 0;
@@ -152,7 +170,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
         _mensaje = 'No se pudo conectar al servidor';
       });
     } finally {
-      setState(() => _subiendo = false);
+      setState(() => _subiendo = false); //boton listo para funcionar nuevamente
     }
   }
 
@@ -217,14 +235,14 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                     const _RequisitosArchivoCard(),
                     const SizedBox(height: 32),
 
-                    // Zona de carga
+                    // Zona de carga ////////////////////////////////////////////////////////////////////////////////////////
                     _ZonaCargaArchivo(
                       nombreArchivo: _nombreArchivo,
                       onSeleccionar: _seleccionarArchivoZip,
                     ),
                     const SizedBox(height: 32),
 
-                    // Boton subir
+                    // Boton subir //////////////////////////////////////////////////////////////////////////////////////////////////
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -261,7 +279,7 @@ class _CargaMasivaArchivosPageState extends State<CargaMasivaArchivosPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Resultado
+                    ///////////////////////////////////////////////////////////// Resultado
                     if (_exito != null)
                       _ResultadoCarga(
                         exito: _exito!,
@@ -501,7 +519,7 @@ class _ResultadoCarga extends StatelessWidget {
           ],
         ),
 
-        // Detalle errores
+        ////////////////////////////////////////////////////////////////////////////////////////// Detalle errores
         if (detalleErrores.isNotEmpty) ...[
           const SizedBox(height: 16),
           const Text(
@@ -532,7 +550,7 @@ class _ResultadoCarga extends StatelessWidget {
           ),
         ],
 
-        // Detalle procesados
+        /////////////////////////////////////////////////// Detalle procesados
         if (detalleProcessados.isNotEmpty) ...[
           const SizedBox(height: 16),
           const Text(

@@ -90,8 +90,8 @@ class _CompensacionesAdminState extends State<CompensacionesAdmin> {
             const SizedBox(width: 10),
             Text(
               accion == 'Aprobada'
-                  ? 'Aprobar Compensacion'
-                  : 'Rechazar Compensacion',
+                  ? 'Aprobar Compensación'
+                  : 'Rechazar Compensación',
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
@@ -126,7 +126,7 @@ class _CompensacionesAdminState extends State<CompensacionesAdmin> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Dias a compensar: ${comp['dias_compensados']}',
+                      'Días a compensar: ${comp['dias_compensados']}',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF475569),
@@ -154,7 +154,7 @@ class _CompensacionesAdminState extends State<CompensacionesAdmin> {
               // Observacion
               Text(
                 accion == 'Aprobada'
-                    ? 'Observacion (opcional):'
+                    ? 'Observación (opcional):'
                     : 'Motivo de rechazo (obligatorio):',
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
@@ -250,8 +250,8 @@ class _CompensacionesAdminState extends State<CompensacionesAdmin> {
           SnackBar(
             content: Text(
               estado == 'Aprobada'
-                  ? 'Compensacion aprobada correctamente'
-                  : 'Compensacion rechazada',
+                  ? 'Compensación aprobada correctamente'
+                  : 'Compensación rechazada',
             ),
             backgroundColor: estado == 'Aprobada'
                 ? const Color(0xFF059669)
@@ -336,7 +336,7 @@ class _CompensacionesAdminState extends State<CompensacionesAdmin> {
                         children: [
                           // Titulo
                           const Text(
-                            'Gestion de Compensaciones',
+                            'Gestión de Compensaciones',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -345,7 +345,7 @@ class _CompensacionesAdminState extends State<CompensacionesAdmin> {
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Aprobacion de solicitudes de compensacion en efectivo por dias progresivos',
+                            'Aprobación de solicitudes de compensación en efectivo por días progresivos',
                             style: TextStyle(
                               fontSize: 13,
                               color: Color(0xFF64748B),
@@ -409,7 +409,7 @@ class _CompensacionesAdminState extends State<CompensacionesAdmin> {
                                   const SizedBox(height: 12),
                                   Text(
                                     _filtroEstado == 'Todas'
-                                        ? 'No hay solicitudes de compensacion'
+                                        ? 'No hay solicitudes de compensación'
                                         : 'No hay solicitudes con estado "$_filtroEstado"',
                                     style: const TextStyle(
                                       color: Color(0xFF64748B),
@@ -534,8 +534,8 @@ class _TarjetaCompensacionAdmin extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _FilaInfo(
-                      label: 'Dias a compensar:',
-                      valor: '${comp['dias_compensados']} dias',
+                      label: 'Días a compensar:',
+                      valor: '${comp['dias_compensados']} días',
                     ),
                     const SizedBox(height: 6),
                     _FilaInfo(
@@ -549,13 +549,13 @@ class _TarjetaCompensacionAdmin extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     _FilaInfo(
-                      label: 'Fecha solicitud:',
+                      label: 'Fecha de solicitud:',
                       valor: comp['fecha_solicitud'] ?? '',
                     ),
                     if (comp['fecha_decision'] != null) ...[
                       const SizedBox(height: 6),
                       _FilaInfo(
-                        label: 'Fecha decision:',
+                        label: 'Fecha de decisión:',
                         valor: comp['fecha_decision'],
                       ),
                     ],
@@ -563,7 +563,7 @@ class _TarjetaCompensacionAdmin extends StatelessWidget {
                         comp['observacion'].toString().isNotEmpty) ...[
                       const SizedBox(height: 6),
                       _FilaInfo(
-                        label: 'Observacion:',
+                        label: 'Observación:',
                         valor: comp['observacion'],
                       ),
                     ],

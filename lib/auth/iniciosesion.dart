@@ -792,20 +792,16 @@ class _PanelAlertasContratosState extends State<_PanelAlertasContratos> {
                     itemCount: alertas.length,
                     itemBuilder: (ctx, i) {
                       final a = alertas[i];
-                      final bool urgente = a['urgente'] == true;
+                      final int diasRestantes =
+                          (a['dias_restantes'] as num?)?.toInt() ?? 999;
+                      final bool muyUrgente = diasRestantes <= 5;
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: urgente
-                              ? const Color(0xFFFEE2E2)
-                              : const Color(0xFFFFFBEB),
+                          color: const Color(0xFFFEE2E2),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: urgente
-                                ? const Color(0xFFFCA5A5)
-                                : const Color(0xFFFDE68A),
-                          ),
+                          border: Border.all(color: const Color(0xFFFCA5A5)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -822,15 +818,25 @@ class _PanelAlertasContratosState extends State<_PanelAlertasContratos> {
                                     ),
                                   ),
                                 ),
+                                if (muyUrgente) ...[
+                                  const Text(
+                                    'URGENTE',
+                                    style: TextStyle(
+                                      color: Color(0xFFB91C1C),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: urgente
-                                        ? Colors.red
-                                        : const Color(0xFFF59E0B),
+                                    color: Colors.red,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
@@ -2289,6 +2295,8 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
   String _error = '';
 
   bool _cuentaNoVerificada = false;
+  // Activacion manual: codigo de 6 digitos de una solicitud aun pendiente
+  String _codigoPendiente = '';
   bool _reenviando = false;
   String _mensajeReenvio = '';
   bool _exitoReenvio = false;
@@ -2337,6 +2345,7 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
       _cargando = true;
       _error = '';
       _cuentaNoVerificada = false;
+      _codigoPendiente = '';
       _mensajeReenvio = '';
     });
 
@@ -2397,6 +2406,9 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
         setState(() {
           _error = data['mensaje'] ?? 'Credenciales incorrectas.';
           _cuentaNoVerificada = data['cuenta_no_verificada'] == true;
+          _codigoPendiente = data['cuenta_pendiente'] == true
+              ? (data['codigo_vinculacion'] ?? '').toString()
+              : '';
         });
       }
     } catch (e) {
@@ -2429,6 +2441,7 @@ class _IniciarSesionPageState extends State<IniciarSesionPage> {
             cargando: _cargando,
             error: _error,
             cuentaNoVerificada: _cuentaNoVerificada,
+            codigoPendiente: _codigoPendiente,
             reenviando: _reenviando,
             mensajeReenvio: _mensajeReenvio,
             exitoReenvio: _exitoReenvio,
@@ -2685,6 +2698,7 @@ class _PanelFormularioLogin extends StatelessWidget {
   final bool cargando;
   final String error;
   final bool cuentaNoVerificada;
+  final String codigoPendiente;
   final bool reenviando;
   final String mensajeReenvio;
   final bool exitoReenvio;
@@ -2700,6 +2714,7 @@ class _PanelFormularioLogin extends StatelessWidget {
     required this.cargando,
     required this.error,
     required this.cuentaNoVerificada,
+    this.codigoPendiente = '',
     required this.reenviando,
     required this.mensajeReenvio,
     required this.exitoReenvio,
@@ -2859,6 +2874,37 @@ class _PanelFormularioLogin extends StatelessWidget {
               ],
             ),
           ),
+          if (codigoPendiente.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'Tu código de solicitud (infórmalo al administrador)',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 4),
+                  SelectableText(
+                    codigoPendiente,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 6,
+                      color: Color(0xFF001E42),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (cuentaNoVerificada) ...[
             const SizedBox(height: 10),
             SizedBox(

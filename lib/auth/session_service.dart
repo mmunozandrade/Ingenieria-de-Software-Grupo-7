@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+//el lugar donde la aplicación deja guardado el pase (y otros datos de la sesión)
+//para no perderlo al pasar de una pantalla a otra.
 class SessionService {
   static const String _tokenKey = 'access_token';
   static const String _rolKey = 'rol';
@@ -16,6 +18,7 @@ class SessionService {
     required int personaId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    //Es el paso 2 de tu cadena: el token llega del servidor y aquí queda guardado.
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_rolKey, rol);
     await prefs.setString(_nombreKey, nombreCompleto);

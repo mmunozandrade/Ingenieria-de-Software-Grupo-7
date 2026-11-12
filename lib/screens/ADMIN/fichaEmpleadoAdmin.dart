@@ -58,6 +58,11 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
   String? _rolSeleccionado;
   String? _nombreCertificado;
   Uint8List? _certificadoBytes;
+  // Certificado AFP ya guardado en el servidor (null = aún no tiene uno)
+  Map<String, dynamic>? _certificadoActual;
+  bool _cargandoCertificado = false;
+  bool _abriendoCertificado = false;
+  DateTime? _fechaCertificadoOriginal; // fecha al abrir/guardar la ficha
   bool _guardando = false;
   bool _guardandoRol = false;
   String _mensaje = '';
@@ -127,6 +132,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     if (fc is String && fc.length >= 10) {
       _fechaCertificado = DateTime.tryParse(fc.substring(0, 10));
     }
+    _fechaCertificadoOriginal = _fechaCertificado;
     _afpSeleccionada = widget.empleado['afp'];
     if (_afpSeleccionada != null && !_afpListAdmin.contains(_afpSeleccionada)) {
       _afpSeleccionada = null;
@@ -137,6 +143,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     _calcularMeses();
     _cargarFechaVencimientoInicial();
     _cargarDocumentos();
+    _cargarCertificadoActual();
     _turnoSeleccionado = widget.empleado['turno'] ?? 'Turno Fijo';
     _cargarTurnos();
   }
@@ -405,6 +412,307 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
     return edad;
   }
 
+  // ── Certificado AFP guardado: consultar, ver y descargar ──
+  Future<void> _cargarCertificadoActual() async {
+    setState(() => _cargandoCertificado = true);
+    try {
+      final token = await SessionService.obtenerToken();
+      final idEmple = widget.empleado['id_empleado'];
+      final response = await http.get(
+        Uri.parse('$_apiUrlFichaAdmin/empleados/$idEmple/certificado-afp'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      final data = jsonDecode(response.body);
+      if (!mounted) return;
+      setState(() {
+        _certificadoActual = (data['success'] == true && data['existe'] == true)
+            ? Map<String, dynamic>.from(data)
+            : null;
+      });
+    } catch (_) {
+      // silencioso: si falla, se muestra como "sin certificado"
+    } finally {
+      if (mounted) setState(() => _cargandoCertificado = false);
+    }
+  }
+
+  String _fmtFechaCertificado(dynamic iso) {
+    if (iso is! String) return '—';
+    final f = DateTime.tryParse(iso)?.toLocal();
+    if (f == null) return '—';
+    return '${f.day.toString().padLeft(2, '0')}/'
+        '${f.month.toString().padLeft(2, '0')}/${f.year}';
+  }
+
+  Future<Uint8List?> _obtenerPdfCertificado() async {
+    try {
+      final token = await SessionService.obtenerToken();
+      final idEmple = widget.empleado['id_empleado'];
+      final response = await http.get(
+        Uri.parse(
+          '$_apiUrlFichaAdmin/empleados/$idEmple/certificado-afp/archivo',
+        ),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200 &&
+          response.headers['content-type']?.contains('pdf') == true) {
+        return response.bodyBytes;
+      }
+    } catch (_) {}
+    if (!mounted) return null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No se pudo obtener el certificado AFP'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return null;
+  }
+
+  Future<void> _verCertificado() async {
+    setState(() => _abriendoCertificado = true);
+    try {
+      final bytes = await _obtenerPdfCertificado();
+      if (bytes == null) return;
+      final blob = html.Blob([bytes], 'application/pdf');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      try {
+        html.window.open(url, '_blank');
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'El navegador bloqueó la ventana. Usa el botón Descargar.',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+      Future.delayed(
+        const Duration(minutes: 1),
+        () => html.Url.revokeObjectUrl(url),
+      );
+    } finally {
+      if (mounted) setState(() => _abriendoCertificado = false);
+    }
+  }
+
+  Future<void> _descargarCertificado() async {
+    setState(() => _abriendoCertificado = true);
+    try {
+      final bytes = await _obtenerPdfCertificado();
+      if (bytes == null) return;
+      final nombre =
+          (_certificadoActual?['nombre_archivo'] as String?) ??
+          'certificado_afp.pdf';
+      _descargarBytes(bytes, nombre);
+    } finally {
+      if (mounted) setState(() => _abriendoCertificado = false);
+    }
+  }
+
+  bool _mismaFecha(DateTime? a, DateTime? b) =>
+      a != null &&
+      b != null &&
+      a.year == b.year &&
+      a.month == b.month &&
+      a.day == b.day;
+
+  // Al reemplazar un certificado, confirma que la fecha de presentación
+  // (que define los días progresivos) siga siendo la correcta.
+  Future<bool> _confirmarFechaAlReemplazar() async {
+    final f = _fechaCertificado!;
+    final texto =
+        '${f.day.toString().padLeft(2, '0')}/'
+        '${f.month.toString().padLeft(2, '0')}/${f.year}';
+    final r = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Fecha de presentación'),
+        content: Text(
+          'Estás reemplazando el certificado AFP y la fecha de presentación '
+          'sigue siendo $texto. Esta fecha define desde qué aniversario se '
+          'devengan los días progresivos. ¿Es la fecha correcta?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cambiar fecha'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Mantener fecha'),
+          ),
+        ],
+      ),
+    );
+    return r == true;
+  }
+
+  Widget _buildBloqueCertificado() {
+    const azul = Color(0xFF001E42);
+    // Archivo nuevo elegido, pendiente de guardar
+    if (_certificadoBytes != null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE6FFFB),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFF5EEAD4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.picture_as_pdf, color: Color(0xFF0D9488)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _nombreCertificado ?? 'certificado_afp.pdf',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0D9488),
+                    ),
+                  ),
+                  Text(
+                    _certificadoActual != null
+                        ? 'Reemplazará al certificado actual al presionar Guardar'
+                        : 'Se guardará al presionar Guardar',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Quitar archivo seleccionado',
+              icon: const Icon(Icons.close, size: 18),
+              onPressed: () => setState(() {
+                _certificadoBytes = null;
+                _nombreCertificado = null;
+              }),
+            ),
+          ],
+        ),
+      );
+    }
+    // Ya existe un certificado guardado
+    if (_certificadoActual != null) {
+      final c = _certificadoActual!;
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.picture_as_pdf, color: Color(0xFFDC2626)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${c['nombre_archivo'] ?? 'certificado_afp.pdf'}',
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Subido el ${_fmtFechaCertificado(c['fecha_subida'])} · por ${c['subido_por'] ?? '—'}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_abriendoCertificado)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _abriendoCertificado ? null : _verCertificado,
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  label: const Text('Ver'),
+                  style: OutlinedButton.styleFrom(foregroundColor: azul),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _abriendoCertificado
+                      ? null
+                      : _descargarCertificado,
+                  icon: const Icon(Icons.download_outlined, size: 18),
+                  label: const Text('Descargar'),
+                  style: OutlinedButton.styleFrom(foregroundColor: azul),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _seleccionarCertificado,
+                  icon: const Icon(Icons.swap_horiz, size: 18),
+                  label: const Text('Reemplazar'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFB45309),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    // Sin certificado: invitación a subir
+    return InkWell(
+      onTap: _cargandoCertificado ? null : _seleccionarCertificado,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.upload_file_outlined, color: Color(0xFF64748B)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _cargandoCertificado
+                    ? 'Buscando certificado guardado…'
+                    : 'Subir documento (certificado AFP en PDF)',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _seleccionarCertificado() async {
     final resultado = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -445,7 +753,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
       });
       return;
     }
-    if (_certificadoBytes == null) {
+    if (_certificadoBytes == null && _certificadoActual == null) {
       setState(() {
         _exito = false;
         _mensaje = 'Debes adjuntar el certificado AFP en formato PDF';
@@ -458,6 +766,13 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
         _mensaje = 'Debes indicar la fecha de presentación del certificado';
       });
       return;
+    }
+    if (_certificadoBytes != null &&
+        _certificadoActual != null &&
+        meses > 0 &&
+        _mismaFecha(_fechaCertificado, _fechaCertificadoOriginal)) {
+      final mantener = await _confirmarFechaAlReemplazar();
+      if (!mantener) return;
     }
     setState(() {
       _guardando = true;
@@ -479,7 +794,25 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
             filename: _nombreCertificado ?? 'certificado_afp.pdf',
           ),
         );
-        await reqPdf.send();
+        final respPdf = await http.Response.fromStream(await reqPdf.send());
+        Map<String, dynamic>? dataPdf;
+        try {
+          dataPdf = jsonDecode(respPdf.body) as Map<String, dynamic>;
+        } catch (_) {}
+        if (dataPdf == null || dataPdf['success'] != true) {
+          setState(() {
+            _exito = false;
+            _mensaje =
+                (dataPdf?['mensaje'] as String?) ??
+                'No se pudo guardar el certificado AFP';
+          });
+          return;
+        }
+        setState(() {
+          _certificadoBytes = null;
+          _nombreCertificado = null;
+        });
+        await _cargarCertificadoActual();
       }
       final response = await http.put(
         Uri.parse('$_apiUrlFichaAdmin/empleados/$idEmple/cotizaciones'),
@@ -504,7 +837,10 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
             ? 'Datos actualizados correctamente'
             : data['mensaje'] ?? 'Error al guardar';
       });
-      if (_exito) _calcularMeses();
+      if (_exito) {
+        _fechaCertificadoOriginal = _fechaCertificado;
+        _calcularMeses();
+      }
     } catch (_) {
       setState(() {
         _exito = false;
@@ -2038,57 +2374,7 @@ class _FichaEmpleadoAdminState extends State<FichaEmpleadoAdmin> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      InkWell(
-                        onTap: _seleccionarCertificado,
-                        borderRadius: BorderRadius.circular(10),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: _certificadoBytes != null
-                                ? const Color(0xFFE6FFFB)
-                                : const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: _certificadoBytes != null
-                                  ? const Color(0xFF5EEAD4)
-                                  : const Color(0xFFCBD5E1),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _certificadoBytes != null
-                                    ? Icons.picture_as_pdf
-                                    : Icons.upload_file_outlined,
-                                color: _certificadoBytes != null
-                                    ? const Color(0xFF0D9488)
-                                    : const Color(0xFF64748B),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _certificadoBytes != null
-                                      ? _nombreCertificado!
-                                      : 'Haz clic para subir el certificado AFP',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: _certificadoBytes != null
-                                        ? const Color(0xFF0D9488)
-                                        : const Color(0xFF94A3B8),
-                                  ),
-                                ),
-                              ),
-                              if (_certificadoBytes != null)
-                                const Icon(
-                                  Icons.check_circle_outline,
-                                  color: Color(0xFF0D9488),
-                                  size: 18,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      _buildBloqueCertificado(),
                     ],
                   ),
                 ),

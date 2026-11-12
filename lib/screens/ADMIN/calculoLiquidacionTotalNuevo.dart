@@ -2230,7 +2230,7 @@ class _SeccionHorasExtrasState extends State<SeccionHorasExtras> {
     if (horas == null || horas <= 0) {
       setState(() {
         _exito = false;
-        _mensaje = 'Debe completar todos los campos solicitados';
+        _mensaje = 'Ingresa una cantidad válida';
       });
       return;
     }
@@ -2359,7 +2359,7 @@ class SeccionMovilizacion extends StatefulWidget {
 }
 
 class _SeccionMovilizacionState extends State<SeccionMovilizacion> {
-  static const int _montoFijoMovilizacion = 50000;
+  static const int _montoFijoMovilizacion = 60000;
   static const int _montoFijoColacion = 60000;
   bool _enviando = false;
   String _mensaje = '';
@@ -2653,21 +2653,9 @@ class _SeccionBonoExcepcionalState extends State<SeccionBonoExcepcional> {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            ChoiceChip(
-              label: const Text('Imponible'),
-              selected: _clasificacion == 'Imponible',
-              onSelected: (_) => setState(() => _clasificacion = 'Imponible'),
-            ),
-            const SizedBox(width: 8),
-            ChoiceChip(
-              label: const Text('No imponible'),
-              selected: _clasificacion == 'No imponible',
-              onSelected: (_) =>
-                  setState(() => _clasificacion = 'No imponible'),
-            ),
-          ],
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: Chip(label: Text('Imponible')),
         ),
         const SizedBox(height: 18),
         _MensajeResultado(mensaje: _mensaje, exito: _exito),

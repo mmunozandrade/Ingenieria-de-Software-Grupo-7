@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'iniciosesion.dart';
@@ -126,7 +127,18 @@ class _RegistroPageState extends State<RegistroPage> {
 
       final data = jsonDecode(response.body);
 
-      if (data['success'] == true) {
+      if (data['success'] == true && data['requiere_aprobacion'] == true) {
+        // Activacion manual: se muestra el codigo de 6 digitos que el
+        // trabajador debe informar al administrador junto a su correo.
+        final codigo = (data['codigo_vinculacion'] ?? '').toString();
+        if (!mounted) return;
+        await _mostrarCodigoVinculacion(correo, codigo);
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const IniciarSesionPage()),
+        );
+      } else if (data['success'] == true) {
         setState(
           () => _exito =
               data['mensaje'] ??
@@ -147,8 +159,96 @@ class _RegistroPageState extends State<RegistroPage> {
             'No se pudo establecer conexión con el servidor. Por favor, verifica tu conexión.',
       );
     } finally {
-      setState(() => _cargando = false);
+      if (mounted) setState(() => _cargando = false);
     }
+  }
+
+  Future<void> _mostrarCodigoVinculacion(String correo, String codigo) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Color(0xFF059669)),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Solicitud enviada',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Tu cuenta aún no está habilitada. Informa al administrador, '
+                'en persona o por teléfono, que enviaste una solicitud con '
+                'estos datos:',
+              ),
+              const SizedBox(height: 14),
+              Text('Correo: $correo'),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Tu código',
+                      style: TextStyle(color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 4),
+                    SelectableText(
+                      codigo,
+                      style: const TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 8,
+                        color: Color(0xFF001E42),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Anótalo: lo necesitarás para que el administrador habilite '
+                'tu cuenta. La solicitud vence en 3 días. Si lo pierdes, '
+                'puedes verlo de nuevo al intentar iniciar sesión.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Clipboard.setData(ClipboardData(text: codigo)),
+            icon: const Icon(Icons.copy, size: 18),
+            label: const Text('Copiar código'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF001E42),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

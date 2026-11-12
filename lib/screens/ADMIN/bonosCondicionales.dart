@@ -466,24 +466,9 @@ class _BonosCondicionalesScreenState extends State<BonosCondicionalesScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              ChoiceChip(
-                                label: const Text('Imponible'),
-                                selected: _clasificacion == 'Imponible',
-                                onSelected: (_) => setState(
-                                  () => _clasificacion = 'Imponible',
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              ChoiceChip(
-                                label: const Text('No imponible'),
-                                selected: _clasificacion == 'No imponible',
-                                onSelected: (_) => setState(
-                                  () => _clasificacion = 'No imponible',
-                                ),
-                              ),
-                            ],
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Chip(label: Text('Imponible')),
                           ),
                           const SizedBox(height: 16),
 

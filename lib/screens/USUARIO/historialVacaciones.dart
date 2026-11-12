@@ -73,7 +73,10 @@ class _HistorialVacacionesState extends State<HistorialVacaciones> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      if (response.statusCode == 200) {
+      final esPdf = (response.headers['content-type'] ?? '').contains(
+        'application/pdf',
+      );
+      if (response.statusCode == 200 && esPdf) {
         final blob = html.Blob([response.bodyBytes], 'application/pdf');
         final url = html.Url.createObjectUrlFromBlob(blob);
         final anchor = html.AnchorElement(href: url)
@@ -90,18 +93,28 @@ class _HistorialVacacionesState extends State<HistorialVacaciones> {
           );
         }
       } else {
+        // El servidor respondio con un error (JSON) en vez del PDF
+        String mensaje = 'No se pudo generar el recibo';
+        try {
+          final data = jsonDecode(response.body);
+          mensaje = data['mensaje'] ?? mensaje;
+        } catch (_) {}
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'El sistema no pudo generar el comprobante. Verifique que todos los datos estén completos',
-              ),
-              backgroundColor: Colors.orange,
-            ),
+            SnackBar(content: Text(mensaje), backgroundColor: Colors.red),
           );
         }
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo conectar al servidor'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Color _colorEstado(String estado) {
